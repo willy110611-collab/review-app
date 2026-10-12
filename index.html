@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>審查意見查詢</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+/* =========================================================
+   可調整設定（編號對應說明清單）
+   ========================================================= */
+:root{
+  /* A 色彩 */
+  --c-bg:#E6EDF0;          /* A1 App 背景 */
+  --c-surface:#FFFFFF;     /* A2 卡片／面板底色 */
+  --c-ink:#17252C;         /* A3 主文字 */
+  --c-ink2:#5C6C75;        /* A4 次要文字 */
+  --c-primary:#0E5E6F;     /* A5 主色（標題列、選取狀態） */
+  --c-line:#D3DDE2;        /* A6 分隔線／邊框 */
+  --c-hl:#FFE38A;          /* A7 關鍵字標示底色 */
+  --c-s1:#3D8A4F;          /* A8 期初 色 */
+  --c-s2:#2E6CB4;          /* A9 期中 色 */
+  --c-s3:#7B4FA8;          /* A10 期末 色 */
+  --c-desk:#C9D3D8;        /* A11 電腦預覽時手機外的背景 */
+
+  /* B 字體 */
+  --f-family:"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif; /* B1 字型 */
+  --f-title:26px;          /* B2 頁面大標 */
+  --f-body:15px;           /* B3 意見內文 */
+  --f-meta:12.5px;         /* B4 委員名、標籤 */
+  --f-lh:1.65;             /* B5 內文行距 */
+
+  /* C 邊框與形狀 */
+  --r-card:14px;           /* C1 卡片圓角 */
+  --r-ctrl:11px;           /* C2 搜尋框／按鈕圓角 */
+  --stripe:5px;            /* C3 卡片左側階段色條寬度（0=不顯示） */
+  --card-border:1px solid var(--c-line); /* C4 卡片外框 */
+  --card-shadow:0 1px 0 rgba(23,37,44,.06); /* C5 卡片陰影 */
+
+  /* D 版面 */
+  --gap:10px;              /* D1 卡片間距 */
+  --pad:16px;              /* D2 左右留白 */
+  --frame-w:402px;         /* D3 預設機型寬（iPhone 16 Pro） */
+  --frame-h:874px;         /* D4 預設機型高 */
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --c-bg:#0F1A1F;--c-surface:#18262D;--c-ink:#E4ECEF;--c-ink2:#93A5AE;
+    --c-primary:#4FB0C4;--c-line:#2A3B43;--c-hl:#7A6420;--c-desk:#0A1215;
+  }
+}
+:root[data-theme="dark"]{
+  --c-bg:#0F1A1F;--c-surface:#18262D;--c-ink:#E4ECEF;--c-ink2:#93A5AE;
+  --c-primary:#4FB0C4;--c-line:#2A3B43;--c-hl:#7A6420;--c-desk:#0A1215;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{font-family:var(--f-family);background:var(--c-desk);color:var(--c-ink);-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+button:focus-visible,input:focus-visible{outline:2px solid var(--c-primary);outline-offset:2px}
+
+/* ---- 手機外框（電腦上預覽） ---- */
+.stage{min-height:100%;display:flex;align-items:center;justify-content:center;padding:24px}
+.device{position:relative;width:var(--frame-w);height:var(--frame-h);border-radius:62px;background:#1c1f21;padding:11px;box-shadow:0 0 0 2px #3a3f42, 0 30px 60px rgba(0,0,0,.25)}
+.screen{position:relative;width:100%;height:100%;border-radius:52px;overflow:hidden;background:var(--c-bg);display:flex;flex-direction:column}
+.island{position:absolute;top:11px;left:50%;transform:translateX(-50%);width:124px;height:36px;border-radius:20px;background:#000;z-index:20}
+.statusbar{height:54px;flex:none;display:flex;align-items:flex-end;justify-content:space-between;padding:0 34px 6px 40px;font-weight:600;font-size:16px;background:var(--c-primary);color:#fff}
+.homebar{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);width:134px;height:5px;border-radius:3px;background:var(--c-ink);opacity:.85;z-index:20}
+/* 真的在手機上開啟：滿版，不顯示外框 */
+@media (max-width:520px){
+  .stage{padding:0;display:block;height:100%}
+  .device{width:100%;height:100%;border-radius:0;padding:0;box-shadow:none;background:none}
+  .screen{border-radius:0;padding-top:env(safe-area-inset-top,0px);background:var(--c-bg)}
+  .island,.statusbar,.homebar{display:none}
+  .appbar{padding-top:12px}
+}
+
+/* ---- 標題列 ---- */
+.appbar{position:relative;flex:none;background:var(--c-primary);color:#fff;padding:6px var(--pad) 14px}
+.appbar .proj{font-size:12px;opacity:.82;letter-spacing:.02em}
+.appbar h1{font-size:var(--f-title);font-weight:900;line-height:1.2;margin-top:2px}
+
+/* ---- 內容區 ---- */
+.view{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:20px}
+.view[hidden]{display:none}
+.controls{position:sticky;top:0;z-index:5;background:var(--c-bg);padding:12px var(--pad) 10px;border-bottom:1px solid var(--c-line)}
+.search{display:flex;align-items:center;gap:8px;background:var(--c-surface);border:1px solid var(--c-line);border-radius:var(--r-ctrl);padding:0 10px;height:44px}
+.search svg{flex:none;color:var(--c-ink2)}
+.search input{flex:1;border:0;background:none;font:inherit;font-size:16px;color:var(--c-ink);min-width:0;outline:none}
+.search .clr{width:28px;height:28px;border-radius:50%;color:var(--c-ink2);font-size:18px;line-height:1}
+.seg{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-top:10px;background:var(--c-line);padding:3px;border-radius:var(--r-ctrl)}
+.seg button{height:34px;border-radius:calc(var(--r-ctrl) - 3px);font-size:14px;font-weight:500;color:var(--c-ink2)}
+.seg button small{font-size:11px;opacity:.75;margin-left:2px}
+.seg button[aria-pressed="true"]{background:var(--c-surface);color:var(--c-ink);font-weight:700;box-shadow:0 1px 2px rgba(0,0,0,.12)}
+.seg button[data-s="期初"][aria-pressed="true"]{color:var(--c-s1)}
+.seg button[data-s="期中"][aria-pressed="true"]{color:var(--c-s2)}
+.seg button[data-s="期末"][aria-pressed="true"]{color:var(--c-s3)}
+.row2{display:flex;align-items:center;gap:8px;margin-top:10px}
+.who{flex:1;display:flex;align-items:center;justify-content:space-between;height:36px;padding:0 12px;border:1px solid var(--c-line);background:var(--c-surface);border-radius:var(--r-ctrl);font-size:14px;min-width:0}
+.who span{overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.who.on{border-color:var(--c-primary);color:var(--c-primary);font-weight:700}
+.reset{font-size:13px;color:var(--c-primary);padding:0 4px;height:36px}
+.count{font-size:var(--f-meta);color:var(--c-ink2);padding:10px var(--pad) 2px}
+
+/* ---- 意見卡片 ---- */
+.list{padding:6px var(--pad) 0;display:flex;flex-direction:column;gap:var(--gap)}
+.card{position:relative;background:var(--c-surface);border:var(--card-border);border-radius:var(--r-card);box-shadow:var(--card-shadow);padding:12px 14px 12px calc(14px + var(--stripe));overflow:hidden}
+.card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:var(--stripe);background:var(--sc)}
+.card[data-s="期初"]{--sc:var(--c-s1)}.card[data-s="期中"]{--sc:var(--c-s2)}.card[data-s="期末"]{--sc:var(--c-s3)}
+.meta{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:var(--f-meta);color:var(--c-ink2)}
+.pill{display:inline-block;padding:1px 8px;border-radius:999px;color:#fff;background:var(--sc);font-weight:700;font-size:12px}
+.meta b{color:var(--c-ink);font-weight:700}
+.tag{border:1px solid var(--c-line);border-radius:6px;padding:0 6px;font-size:11.5px}
+.txt{white-space:pre-line;font-size:var(--f-body);line-height:var(--f-lh);margin-top:8px;word-break:break-word}
+mark{background:var(--c-hl);color:inherit;border-radius:3px;padding:0 1px}
+.resp-btn{margin-top:10px;width:100%;display:flex;justify-content:space-between;align-items:center;font-size:13px;font-weight:700;color:var(--c-primary);padding-top:9px;border-top:1px dashed var(--c-line)}
+.resp-btn .chev{transition:transform .2s}
+.resp-btn[aria-expanded="true"] .chev{transform:rotate(180deg)}
+.resp{white-space:pre-line;font-size:14px;line-height:var(--f-lh);color:var(--c-ink);margin-top:6px;background:var(--c-bg);border-radius:10px;padding:10px 12px}
+.resp[hidden]{display:none}
+.noresp{margin-top:10px;font-size:12.5px;color:var(--c-ink2);padding-top:9px;border-top:1px dashed var(--c-line)}
+.empty{text-align:center;color:var(--c-ink2);padding:48px 24px;font-size:14px;line-height:1.7}
+.more{display:block;margin:12px auto 0;font-size:14px;color:var(--c-primary);font-weight:700;padding:10px 18px}
+
+/* ---- 委員名單／會議 ---- */
+.sec-h{font-size:13px;font-weight:700;color:var(--c-ink2);padding:18px var(--pad) 8px}
+.group{margin:0 var(--pad);background:var(--c-surface);border:var(--card-border);border-radius:var(--r-card);overflow:hidden}
+.pr{width:100%;display:flex;align-items:center;gap:10px;padding:12px 14px;text-align:left;border-bottom:1px solid var(--c-line)}
+.pr:last-child{border-bottom:0}
+.pr .nm{flex:1;font-size:15px;font-weight:500;min-width:0}
+.dots{display:flex;gap:4px}
+.dot{min-width:24px;height:22px;border-radius:6px;font-size:11.5px;font-weight:700;display:flex;align-items:center;justify-content:center;color:#fff}
+.dot.s1{background:var(--c-s1)}.dot.s2{background:var(--c-s2)}.dot.s3{background:var(--c-s3)}
+.dot.zero{background:transparent;color:var(--c-line);border:1px solid var(--c-line)}
+.legend{display:flex;gap:12px;padding:12px var(--pad) 0;font-size:12px;color:var(--c-ink2)}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:4px;vertical-align:-1px}
+.mt{margin:0 var(--pad) var(--gap);width:calc(100% - 2*var(--pad));display:block;text-align:left;background:var(--c-surface);border:var(--card-border);border-radius:var(--r-card);padding:14px 16px 14px calc(16px + var(--stripe));position:relative;overflow:hidden}
+.mt::before{content:"";position:absolute;left:0;top:0;bottom:0;width:var(--stripe);background:var(--sc)}
+.mt .big{font-size:22px;font-weight:900;color:var(--sc)}
+.mt dl{display:grid;grid-template-columns:auto 1fr;gap:3px 10px;font-size:13px;margin-top:6px}
+.mt dt{color:var(--c-ink2)}
+.mt .n{position:absolute;right:16px;top:14px;font-size:13px;color:var(--c-ink2)}
+.mt .n b{font-size:24px;color:var(--c-ink);font-weight:900}
+
+/* ---- 底部分頁列 ---- */
+.tabbar{flex:none;display:grid;grid-template-columns:repeat(3,1fr);background:var(--c-surface);border-top:1px solid var(--c-line);padding:6px 0 calc(26px + env(safe-area-inset-bottom,0px))}
+@media (max-width:520px){.tabbar{padding-bottom:calc(8px + env(safe-area-inset-bottom,0px))}}
+.tabbar button{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:11px;color:var(--c-ink2);padding:4px 0}
+.tabbar button[aria-selected="true"]{color:var(--c-primary);font-weight:700}
+
+/* ---- 委員選擇底部面板 ---- */
+.sheet-bg{position:absolute;inset:0;background:rgba(0,0,0,.35);z-index:30;display:flex;align-items:flex-end}
+.sheet-bg[hidden]{display:none}
+.sheet{width:100%;max-height:78%;background:var(--c-bg);border-radius:18px 18px 0 0;display:flex;flex-direction:column;padding-bottom:20px}
+.sheet header{display:flex;align-items:center;justify-content:space-between;padding:14px var(--pad);font-weight:700;font-size:16px}
+.sheet header button{color:var(--c-primary);font-size:15px}
+.sheet .body{overflow-y:auto;padding-bottom:10px}
+.pr.sel .nm{color:var(--c-primary);font-weight:700}
+.appbar select.proj{appearance:none;-webkit-appearance:none;background:transparent;border:0;color:#fff;font:inherit;font-size:12px;max-width:100%;text-overflow:ellipsis;padding:0;cursor:pointer}
+.appbar select.proj option{color:#000}
+.loadmsg{padding:40px var(--pad);text-align:center;color:var(--c-ink2);line-height:1.8;font-size:14px}
+.mt .rd{font-size:13px;font-weight:700;margin-left:6px;opacity:.8}
+input[type=search]::-webkit-search-cancel-button{-webkit-appearance:none;display:none}
+/* ---- 密碼畫面 ---- */
+.logout{position:absolute;right:var(--pad);bottom:16px;color:#fff;opacity:.85;font-size:12.5px;border:1px solid rgba(255,255,255,.5);border-radius:999px;padding:3px 10px}
+.logout[hidden]{display:none}
+.lock{position:absolute;inset:0;z-index:40;background:var(--c-primary);color:#fff;display:flex;flex-direction:column;justify-content:center;padding:0 28px 80px}
+.lock[hidden]{display:none}
+.lock h2{font-size:var(--f-title);font-weight:900;margin-bottom:6px}
+.lock p{font-size:14px;opacity:.85;margin-bottom:22px;line-height:1.6}
+.lock input[type=password]{width:100%;font:inherit;font-size:17px;padding:13px 14px;border-radius:var(--r-ctrl);border:0;background:#fff;color:#17252C}
+.lock label.rm{display:flex;align-items:center;gap:8px;font-size:14px;margin:14px 0 18px;opacity:.9}
+.lock label.rm input{width:18px;height:18px}
+.lock .go{width:100%;background:#fff;color:var(--c-primary);font-weight:700;font-size:16px;padding:13px;border-radius:var(--r-ctrl)}
+.lock .go:disabled{opacity:.6}
+.lock .err{min-height:22px;margin-top:12px;font-size:14px;color:#FFE38A}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="stage">
+ <div class="device">
+  <div class="screen" id="screen">
+   <div class="island" aria-hidden="true"></div>
+   <div class="statusbar" aria-hidden="true"><span>9:41</span><span>􀙇 ▮</span></div>
+
+   <header class="appbar">
+     <div class="proj" id="proj">載入中…</div>
+     <h1 id="title">審查意見查詢</h1>
+     <button class="logout" id="logout" hidden>登出</button>
+   </header>
+
+   <!-- 查詢 -->
+   <section class="view" id="v-search">
+     <div class="controls">
+       <label class="search">
+         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>
+         <input id="q" type="search" placeholder="搜尋意見、辦理情形、委員" autocomplete="off" enterkeyhint="search" aria-label="關鍵字">
+         <button class="clr" id="clr" aria-label="清除" hidden>×</button>
+       </label>
+       <div class="seg" role="group" aria-label="審查階段" id="seg"></div>
+       <div class="row2">
+         <button class="who" id="who"><span id="whoTxt">委員／單位：全部</span><span aria-hidden="true">▾</span></button>
+         <button class="reset" id="reset">重設</button>
+       </div>
+     </div>
+     <div class="count" id="count"></div>
+     <div class="list" id="list"></div>
+   </section>
+
+   <!-- 委員名單 -->
+   <section class="view" id="v-people" hidden>
+     <div class="legend"><span><i style="background:var(--c-s1)"></i>期初</span><span><i style="background:var(--c-s2)"></i>期中</span><span><i style="background:var(--c-s3)"></i>期末</span><span>數字＝意見數</span></div>
+     <div id="people"></div>
+   </section>
+
+   <!-- 會議 -->
+   <section class="view" id="v-meet" hidden>
+     <div class="sec-h">點選會議即可查看該次全部意見</div>
+     <div id="meets"></div>
+   </section>
+
+   <nav class="tabbar" role="tablist">
+     <button role="tab" aria-selected="true" data-v="search"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>查詢</button>
+     <button role="tab" aria-selected="false" data-v="people"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.6-3.6 3.2-5.5 6.5-5.5s5.9 1.9 6.5 5.5"/><circle cx="17" cy="9" r="2.6"/><path d="M17 14c2.6 0 4.2 1.6 4.6 4.5"/></svg>委員</button>
+     <button role="tab" aria-selected="false" data-v="meet"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>會議</button>
+   </nav>
+
+   <div class="sheet-bg" id="sheetBg" hidden>
+     <div class="sheet" role="dialog" aria-label="選擇委員或單位">
+       <header><span>選擇委員／單位</span><button id="sheetClose">完成</button></header>
+       <div class="body" id="sheetBody"></div>
+     </div>
+   </div>
+   <form class="lock" id="lock" hidden autocomplete="off">
+     <h2>審查意見查詢</h2>
+     <p>資料已加密，請輸入密碼。</p>
+     <input type="password" id="pw" placeholder="密碼" inputmode="text" aria-label="密碼" autocomplete="current-password">
+     <label class="rm"><input type="checkbox" id="remember" checked>在這支手機記住密碼</label>
+     <button class="go" id="go" type="submit">開啟</button>
+     <div class="err" id="pwErr" role="alert"></div>
+   </form>
+   <div class="homebar" aria-hidden="true"></div>
+  </div>
+ </div>
+</div>
+
+<script>
+/* 資料來源：data/index.json → 各案 JSON（schema review-comments/v1）。每次開啟都抓最新版。 */
+let DATA=[], MEETS=[], MEETBY={}, PROJECTS=[], people=[];
+const STAGES=["期初","期中","期末"];
+const PAGE=40;
+const st={q:"",stage:"全部",who:null,meet:null,shown:PAGE,open:new Set()};
+
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const terms=()=>st.q.trim().split(/\s+/).filter(Boolean);
+function hl(text){
+  let h=esc(text); const t=terms(); if(!t.length) return h;
+  const re=new RegExp("("+t.map(x=>esc(x).replace(/[.*+?^${}()|[\]\\]/g,"\\$&")).join("|")+")","gi");
+  return h.replace(re,"<mark>$1</mark>");
+}
+function groupOf(name){
+  if(name==="會議結論") return "會議結論";
+  if(name.includes("委員")) return "審查委員";
+  if(/科|分署長|主任工程司/.test(name)) return "第六河川分署";
+  return "相關機關與單位";
+}
+const GROUPS=["審查委員","第六河川分署","相關機關與單位","會議結論"];
+function buildPeople(){const m=new Map();DATA.forEach(d=>{if(!m.has(d.committee))m.set(d.committee,{name:d.committee,c:{期初:0,期中:0,期末:0}});if(d.stage in m.get(d.committee).c)m.get(d.committee).c[d.stage]++});return [...m.values()]}
+const rocLong=d=>{const m=/^(\d+)\/(\d+)\/(\d+)$/.exec(d||"");return m?`${+m[1]}年${+m[2]}月${+m[3]}日`:(d||"—")};
+const roundTxt=r=>r?`第${"一二三四五六七八九十"[r-1]||r}次`:"";
+
+function filtered(){
+  const t=terms().map(x=>x.toLowerCase());
+  return DATA.filter(d=>{
+    if(st.stage!=="全部"&&d.stage!==st.stage) return false;
+    if(st.who&&d.committee!==st.who) return false;
+    if(st.meet&&d.meeting!==st.meet) return false;
+    if(t.length){const hay=(d.comment+" "+d.response+" "+d.committee+" "+d.section+" "+d.note).toLowerCase();return t.every(x=>hay.includes(x))}
+    return true;
+  });
+}
+function renderSeg(){
+  const base=DATA.filter(d=>{
+    if(st.who&&d.committee!==st.who) return false;
+    if(st.meet&&d.meeting!==st.meet) return false;
+    const t=terms().map(x=>x.toLowerCase());
+    if(t.length){const hay=(d.comment+" "+d.response+" "+d.committee+" "+d.section+" "+d.note).toLowerCase();return t.every(x=>hay.includes(x))}
+    return true;});
+  $("#seg").innerHTML=["全部",...STAGES].map(s=>{
+    const n=s==="全部"?base.length:base.filter(d=>d.stage===s).length;
+    return `<button data-s="${s}" aria-pressed="${st.stage===s}">${s}<small>${n}</small></button>`}).join("");
+}
+function card(d){
+  const open=st.open.has(d.id);
+  const resp=d.response
+    ?`<button class="resp-btn" aria-expanded="${open}" data-id="${d.id}"><span>辦理情形</span><span class="chev">▾</span></button><div class="resp" ${open?"":"hidden"}>${hl(d.response)}</div>`
+    :`<div class="noresp">此次會議紀錄未附辦理情形</div>`;
+  return `<article class="card" data-s="${d.stage}">
+    <div class="meta"><span class="pill">${d.stage}${MEETBY[d.meeting]&&MEETBY[d.meeting].multi?roundTxt(MEETBY[d.meeting].round):""}</span><b>${hl(d.committee)}</b><span>第 ${d.no} 點</span>${d.note?`<span class="tag">${esc(d.note)}</span>`:""}${d.section?`<span class="tag">${hl(d.section)}</span>`:""}</div>
+    <p class="txt">${hl(d.comment)}</p>${resp}</article>`;
+}
+function renderList(){
+  const r=filtered();
+  const mt=st.meet&&MEETBY[st.meet];
+  $("#count").textContent=`共 ${r.length} 則意見`+(mt?`（${mt.title}）`:"")+(st.q.trim()?`，關鍵字「${st.q.trim()}」`:"");
+  $("#list").innerHTML=r.length? r.slice(0,st.shown).map(card).join("")+(r.length>st.shown?`<button class="more" id="more">再顯示 ${Math.min(PAGE,r.length-st.shown)} 則（尚有 ${r.length-st.shown} 則）</button>`:"")
+   :`<div class="empty">找不到符合的意見。<br>試試較短的關鍵字，或把階段切回「全部」。</div>`;
+  $("#whoTxt").textContent="委員／單位："+(st.who||"全部");
+  $("#who").classList.toggle("on",!!st.who);
+  $("#clr").hidden=!st.q;
+}
+function render(){renderSeg();renderList()}
+
+function peopleRows(sel){
+  return GROUPS.map(g=>{
+    const ps=people.filter(p=>groupOf(p.name)===g); if(!ps.length) return "";
+    return `<div class="sec-h">${g}</div><div class="group">`+ps.map(p=>`<button class="pr${sel===p.name?" sel":""}" data-who="${esc(p.name)}"><span class="nm">${esc(p.name)}</span><span class="dots">${STAGES.map((s,i)=>`<span class="dot s${i+1}${p.c[s]?"":" zero"}">${p.c[s]||"–"}</span>`).join("")}</span></button>`).join("")+`</div>`;
+  }).join("");
+}
+function renderPeople(){$("#people").innerHTML=peopleRows(null)}
+function renderMeets(){
+  $("#meets").innerHTML=MEETS.map(m=>{const ds=DATA.filter(d=>d.meeting===m.id);const w=new Set(ds.map(d=>d.committee)).size;const si=STAGES.indexOf(m.stage)+1||1;
+    return `<button class="mt" data-meet="${esc(m.id)}" style="--sc:var(--c-s${si})"><div class="big">${esc(m.stage)}${m.multi?`<span class="rd">${roundTxt(m.round)}</span>`:""}</div><div class="n"><b>${ds.length}</b> 則</div><dl><dt>會議</dt><dd>${esc(m.title)}</dd><dt>日期</dt><dd>${rocLong(m.date)}</dd><dt>地點</dt><dd>${esc(m.place||"—")}</dd><dt>主持人</dt><dd>${esc(m.chair||"—")}</dd><dt>發言</dt><dd>${w} 位委員／單位</dd></dl></button>`}).join("")||`<div class="loadmsg">尚無會議資料</div>`;
+}
+function go(v){
+  document.querySelectorAll(".tabbar button").forEach(b=>b.setAttribute("aria-selected",b.dataset.v===v));
+  ["search","people","meet"].forEach(x=>$("#v-"+x).hidden=x!==v);
+  $("#title").textContent={search:"審查意見查詢",people:"委員名單",meet:"審查會議"}[v];
+}
+
+// events
+let tmr;
+$("#q").addEventListener("input",e=>{clearTimeout(tmr);tmr=setTimeout(()=>{st.q=e.target.value;st.shown=PAGE;render()},120)});
+$("#clr").onclick=()=>{$("#q").value="";st.q="";st.shown=PAGE;render();$("#q").focus()};
+$("#seg").onclick=e=>{const b=e.target.closest("button");if(!b)return;st.stage=b.dataset.s;if(st.meet&&MEETBY[st.meet].stage!==st.stage)st.meet=null;st.shown=PAGE;render();$("#v-search").scrollTop=0};
+$("#reset").onclick=()=>{st.q="";st.stage="全部";st.who=null;st.meet=null;st.shown=PAGE;$("#q").value="";render()};
+$("#list").onclick=e=>{
+  const m=e.target.closest("#more"); if(m){st.shown+=PAGE;renderList();return}
+  const b=e.target.closest(".resp-btn"); if(!b)return;
+  const id=b.dataset.id; st.open.has(id)?st.open.delete(id):st.open.add(id);
+  b.setAttribute("aria-expanded",st.open.has(id)); b.nextElementSibling.hidden=!st.open.has(id);
+};
+$("#who").onclick=()=>{$("#sheetBody").innerHTML=`<div class="group" style="margin-top:4px"><button class="pr${st.who?"":" sel"}" data-who=""><span class="nm">全部委員／單位</span></button></div>`+peopleRows(st.who);$("#sheetBg").hidden=false};
+$("#sheetClose").onclick=()=>$("#sheetBg").hidden=true;
+$("#sheetBg").onclick=e=>{if(e.target.id==="sheetBg")$("#sheetBg").hidden=true;const b=e.target.closest("[data-who]");if(!b)return;st.who=b.dataset.who||null;st.shown=PAGE;$("#sheetBg").hidden=true;render()};
+$("#people").onclick=e=>{const b=e.target.closest("[data-who]");if(!b)return;st.who=b.dataset.who;st.stage="全部";st.meet=null;st.shown=PAGE;render();go("search");$("#v-search").scrollTop=0};
+$("#meets").onclick=e=>{const b=e.target.closest("[data-meet]");if(!b)return;const m=MEETBY[b.dataset.meet];st.stage=m.stage;st.meet=m.multi?m.id:null;st.who=null;st.shown=PAGE;render();go("search");$("#v-search").scrollTop=0};
+document.querySelector(".tabbar").onclick=e=>{const b=e.target.closest("button");if(b)go(b.dataset.v)};
+
+
+/* ---------- 讀取資料 ---------- */
+const nocache=u=>u+(u.includes("?")?"&":"?")+"t="+Date.now();
+async function getJSON(u){const r=await fetch(nocache(u),{cache:"no-store"});if(!r.ok)throw new Error(u+" "+r.status);return r.json()}
+/* ---------- 解密（AES-256-GCM，PBKDF2-SHA256） ---------- */
+const KEYSTORE="reviewKey";
+const ub64=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
+const tb64=b=>btoa(String.fromCharCode(...new Uint8Array(b)));
+let KEY=null, KEYSALT=null, ENC=false;
+const isEnc=o=>o&&typeof o==="object"&&"ct" in o&&"iv" in o;
+async function deriveKey(pw,salt,iter){
+  const base=await crypto.subtle.importKey("raw",new TextEncoder().encode(pw),"PBKDF2",false,["deriveKey"]);
+  return crypto.subtle.deriveKey({name:"PBKDF2",hash:"SHA-256",salt:ub64(salt),iterations:iter},base,{name:"AES-GCM",length:256},true,["decrypt"]);
+}
+async function decryptWith(key,o){
+  const pt=await crypto.subtle.decrypt({name:"AES-GCM",iv:ub64(o.iv)},key,ub64(o.ct));
+  return JSON.parse(new TextDecoder().decode(pt));
+}
+async function loadStoredKey(salt){
+  try{const s=JSON.parse(localStorage.getItem(KEYSTORE)||"null");if(!s||s.salt!==salt)return null;
+    return await crypto.subtle.importKey("raw",ub64(s.k),{name:"AES-GCM"},true,["decrypt"])}catch(e){return null}
+}
+async function storeKey(key,salt){try{localStorage.setItem(KEYSTORE,JSON.stringify({salt,k:tb64(await crypto.subtle.exportKey("raw",key))}))}catch(e){}}
+function clearKey(){try{localStorage.removeItem(KEYSTORE)}catch(e){}}
+function askPassword(encIdx){
+  return new Promise(resolve=>{
+    const f=$("#lock");f.hidden=false;$("#pw").value="";$("#pwErr").textContent="";setTimeout(()=>$("#pw").focus(),50);
+    f.onsubmit=async e=>{e.preventDefault();const pw=$("#pw").value;if(!pw)return;
+      $("#go").disabled=true;$("#go").textContent="解密中…";$("#pwErr").textContent="";
+      try{const key=await deriveKey(pw,encIdx.salt,encIdx.iter);const idx=await decryptWith(key,encIdx);
+        if($("#remember").checked)await storeKey(key,encIdx.salt);
+        f.hidden=true;resolve({key,idx})}
+      catch(err){$("#pwErr").textContent=window.crypto&&crypto.subtle?"密碼錯誤，請再試一次。":"此瀏覽器不支援解密，請改用 https 網址開啟。"}
+      finally{$("#go").disabled=false;$("#go").textContent="開啟"}};
+  });
+}
+async function getData(u){
+  const o=await getJSON(u);
+  if(!isEnc(o))return o;
+  if(!KEY||o.salt!==KEYSALT)throw new Error("密碼已更換，請登出後重新輸入");
+  return decryptWith(KEY,o);
+}
+function showMsg(html){$("#list").innerHTML=`<div class="loadmsg">${html}</div>`;$("#count").textContent=""}
+async function loadProject(file){
+  showMsg("資料載入中…");
+  const d=await getData("data/"+encodeURIComponent(file));
+  const order=new Map(STAGES.map((s,i)=>[s,i]));
+  MEETS=(d.meetings||[]).slice().sort((a,b)=>(order.get(a.stage)??9)-(order.get(b.stage)??9)||(a.round||0)-(b.round||0)||String(a.date).localeCompare(String(b.date)));
+  const perStage={};MEETS.forEach(m=>perStage[m.stage]=(perStage[m.stage]||0)+1);
+  MEETBY={};MEETS.forEach((m,i)=>{m.multi=perStage[m.stage]>1;m.idx=i;MEETBY[m.id]=m});
+  DATA=(d.comments||[]).map((c,i)=>({...c,id:String(c.id??i),_i:i,note:c.note||"",section:c.section||"",response:c.response||"",comment:c.comment||""}))
+    .sort((a,b)=>((MEETBY[a.meeting]?.idx??99)-(MEETBY[b.meeting]?.idx??99))||a._i-b._i);
+  people=buildPeople();
+  Object.assign(st,{q:"",stage:"全部",who:null,meet:null,shown:PAGE,open:new Set()});$("#q").value="";
+  document.title="審查意見查詢｜"+d.project.name;
+  render();renderPeople();renderMeets();
+}
+async function init(){
+  if(location.protocol==="file:"){showMsg("請用「開啟App.bat」開啟本 App，<br>或放到 GitHub Pages 等網站上瀏覽。<br>（直接雙擊 index.html 無法讀取 data 資料夾）");$("#proj").textContent="";return}
+  try{
+    let idx=await getJSON("data/index.json");
+    if(isEnc(idx)){
+      ENC=true;KEYSALT=idx.salt;$("#logout").hidden=false;
+      if(!(window.crypto&&crypto.subtle)){showMsg("此瀏覽器無法解密，請用 https 網址開啟。");return}
+      KEY=await loadStoredKey(idx.salt);
+      let plain=null;
+      if(KEY){try{plain=await decryptWith(KEY,idx)}catch(e){KEY=null;clearKey()}}
+      if(!plain){showMsg("請輸入密碼");const r=await askPassword(idx);KEY=r.key;plain=r.idx}
+      idx=plain;
+    }
+    PROJECTS=idx.projects||[];
+    if(!PROJECTS.length){showMsg("data 資料夾內還沒有案子。<br>請先用轉檔工具匯出。");$("#proj").textContent="";return}
+    let saved=null;try{saved=localStorage.getItem("proj")}catch(e){}
+    let cur=PROJECTS.find(p=>p.file===saved)||PROJECTS[0];
+    const box=$("#proj");
+    if(PROJECTS.length>1){
+      const sel=document.createElement("select");sel.className="proj";sel.id="proj";sel.setAttribute("aria-label","選擇案子");
+      sel.innerHTML=PROJECTS.map(p=>`<option value="${esc(p.file)}">${esc(p.name)} ▾</option>`).join("");sel.value=cur.file;
+      sel.onchange=()=>{try{localStorage.setItem("proj",sel.value)}catch(e){}loadProject(sel.value).catch(fail)};
+      box.replaceWith(sel);
+    }else box.textContent=cur.name;
+    await loadProject(cur.file);
+  }catch(e){fail(e)}
+}
+$("#logout").onclick=()=>{clearKey();location.reload()};
+function fail(e){console.error(e);showMsg("資料讀取失敗，請確認 data 資料夾與網路連線。<br><small>"+esc(e.message)+"</small>")}
+init();
+</script>
+</body>
+</html>
