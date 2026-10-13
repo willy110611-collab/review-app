@@ -179,6 +179,10 @@ mark{background:var(--hl);color:inherit;border-radius:3px;padding:0 1px}
 .mapbtns button.locating{color:var(--primary)}
 .nocoord{position:absolute;left:10px;bottom:10px;z-index:600;background:var(--card);border:1px solid var(--line);border-radius:999px;font-size:12.5px;padding:6px 12px;box-shadow:var(--shadow-md);color:var(--ink2)}
 .nocoord[hidden]{display:none}
+.nocoord{bottom:48px}
+.mlegend{position:absolute;left:10px;bottom:10px;z-index:600;display:flex;gap:10px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:999px;font-size:12px;padding:5px 12px;box-shadow:var(--shadow-md);color:var(--ink2)}
+.mlegend i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:4px;vertical-align:-1px}
+#v-map.sheeton .mlegend{display:none}
 .bsheet:not(.off)~.nocoord,#v-map.sheeton .nocoord{display:none}
 .pin{width:30px!important;height:38px!important}
 .pin svg{display:block;filter:drop-shadow(0 2px 3px rgba(0,0,0,.25));transition:transform .15s}
@@ -272,6 +276,7 @@ mark{background:var(--hl);color:inherit;border-radius:3px;padding:0 1px}
        <button id="btnHome" aria-label="顯示全部範圍" title="顯示全部範圍"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
      </div>
      <button class="nocoord" id="nocoord" hidden></button>
+     <div class="mlegend" aria-label="圖例"><span><i style="background:#EAB308"></i>進行中</span><span><i style="background:#16A34A"></i>已完成</span><span><i style="background:#94A3B8"></i>未設定</span></div>
      <div class="bsheet off" id="bsheet" role="dialog" aria-label="工程簡述">
        <div class="grab"></div>
        <button class="x" id="bsClose" aria-label="關閉">×</button>
@@ -355,7 +360,10 @@ function hl(text){
 }
 const rocLong=d=>{const m=/^(\d+)\/(\d+)\/(\d+)$/.exec(d||"");return m?`${+m[1]}年${+m[2]}月${+m[3]}日`:(d||"—")};
 const roundTxt=r=>r?`第${"一二三四五六七八九十"[r-1]||r}次`:"";
+/* 類別：優先用資料裡的 role（轉檔工具判定），舊資料才用名稱推測 */
+const ROLE_OF={};
 function groupOf(n){
+  if(ROLE_OF[n])return ROLE_OF[n];
   if(n==="會議結論")return "會議結論";
   if(n.includes("委員"))return "審查委員";
   if(/科|分署長|主任工程司|^本分署/.test(n))return "主辦單位";
@@ -480,6 +488,8 @@ function renderMeets(){
    地圖
    ========================================================= */
 let map=null,markers={},meMarker=null,meCircle=null,selPin=null;
+const PIN_COLOR={"進行中":"#EAB308","已完成":"#16A34A"};
+const pinColor=st=>PIN_COLOR[st]||"#94A3B8";
 const pinSvg=c=>`<svg width="30" height="38" viewBox="0 0 30 38"><path d="M15 37s12-12.2 12-22A12 12 0 0 0 3 15c0 9.8 12 22 12 22z" fill="${c}" stroke="#fff" stroke-width="2"/><circle cx="15" cy="15" r="4.5" fill="#fff"/></svg>`;
 function initMap(){
   if(map||typeof L==="undefined"){if(typeof L==="undefined")$("#map").innerHTML='<div class="loadmsg">地圖元件載入失敗</div>';return}
@@ -499,15 +509,15 @@ function drawPins(){
   if(!map)return;
   Object.values(markers).forEach(m=>m.remove());markers={};
   PROJECTS.forEach(p=>{if(p.lat==null||p.lng==null)return;
-    const mk=L.marker([p.lat,p.lng],{icon:L.divIcon({className:"pin",html:pinSvg("#2563EB"),iconSize:[30,38],iconAnchor:[15,37]}),title:p.name,keyboard:true}).addTo(map);
+    const mk=L.marker([p.lat,p.lng],{icon:L.divIcon({className:"pin",html:pinSvg(pinColor(p.status)),iconSize:[30,38],iconAnchor:[15,37]}),title:p.name,keyboard:true}).addTo(map);
     mk.on("click",e=>{L.DomEvent.stopPropagation(e);showProject(p.file)});markers[p.file]=mk});
   const nc=PROJECTS.filter(p=>p.lat==null||p.lng==null);
   $("#nocoord").hidden=!nc.length;$("#nocoord").textContent=`${nc.length} 案未設定座標 ›`;
 }
 function memberSummary(file){
-  const names=[...new Set(DATA.filter(d=>d.pid===file&&d.committee.includes("委員")).map(d=>d.committee))];
+  const names=[...new Set(DATA.filter(d=>d.pid===file&&groupOf(d.committee)==="審查委員").map(d=>d.committee))];
   if(!names.length)return "—";
-  const short=names.slice(0,2).map(n=>n.slice(0,n.indexOf("委員")+2));
+  const short=names.slice(0,2);
   return short.join("、")+(names.length>2?`等 ${names.length} 位`:` ${names.length} 位`);
 }
 function showProject(file){
@@ -627,7 +637,7 @@ function showMsg(html){$("#list").innerHTML=`<div class="loadmsg">${html}</div>`
 async function loadAll(list){
   showMsg("資料載入中…");
   const order=new Map(STAGES.map((s,i)=>[s,i]));
-  PROJECTS=[];DATA=[];MEETS=[];MEETBY={};
+  PROJECTS=[];DATA=[];MEETS=[];MEETBY={};Object.keys(ROLE_OF).forEach(k=>delete ROLE_OF[k]);
   const files=await Promise.all(list.map(p=>getData("data/"+encodeURIComponent(p.file)).then(d=>({p,d}))));
   files.forEach(({p,d},pi)=>{
     const pj=d.project||{};
@@ -637,6 +647,7 @@ async function loadAll(list){
     const ms=(d.meetings||[]).slice().sort((a,b)=>(order.get(a.stage)??9)-(order.get(b.stage)??9)||(a.round||0)-(b.round||0)||String(a.date).localeCompare(String(b.date)));
     const per={};ms.forEach(m=>per[m.stage]=(per[m.stage]||0)+1);
     ms.forEach((m,i)=>{const key=p.file+"|"+m.id;const mm={...m,key,pid:p.file,pname:proj.name,multi:per[m.stage]>1,idx:pi*1000+i};MEETS.push(mm);MEETBY[key]=mm});
+    (d.comments||[]).forEach(c=>{if(c.role&&c.committee)ROLE_OF[c.committee]=c.role});
     (d.comments||[]).forEach((c,i)=>DATA.push({...c,id:p.file+"|"+(c.id??i),_i:i,pid:p.file,pname:proj.name,mkey:p.file+"|"+c.meeting,
       note:c.note||"",section:c.section||"",response:c.response||"",comment:c.comment||"",committee:c.committee||"",no:c.no??""}));
   });
