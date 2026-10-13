@@ -487,7 +487,7 @@ function renderMeets(){
 /* =========================================================
    地圖
    ========================================================= */
-let map=null,markers={},meMarker=null,meCircle=null,selPin=null;
+let map=null,markers={},meMarker=null,meCircle=null;
 const PIN_COLOR={"進行中":"#EAB308","已完成":"#16A34A"};
 const pinColor=st=>PIN_COLOR[st]||"#94A3B8";
 const pinSvg=c=>`<svg width="30" height="38" viewBox="0 0 30 38"><path d="M15 37s12-12.2 12-22A12 12 0 0 0 3 15c0 9.8 12 22 12 22z" fill="${c}" stroke="#fff" stroke-width="2"/><circle cx="15" cy="15" r="4.5" fill="#fff"/></svg>`;
@@ -507,11 +507,13 @@ function initMap(){
 }
 function drawPins(){
   if(!map)return;
-  Object.values(markers).forEach(m=>m.remove());markers={};
-  PROJECTS.forEach(p=>{if(p.lat==null||p.lng==null)return;
-    const mk=L.marker([p.lat,p.lng],{icon:L.divIcon({className:"pin",html:pinSvg(pinColor(p.status)),iconSize:[30,38],iconAnchor:[15,37]}),title:p.name,keyboard:true}).addTo(map);
-    mk.on("click",e=>{L.DomEvent.stopPropagation(e);showProject(p.file)});markers[p.file]=mk});
-  const nc=PROJECTS.filter(p=>p.lat==null||p.lng==null);
+  Object.values(markers).flat().forEach(m=>m.remove());markers={};
+  PROJECTS.forEach(p=>{if(!p.locs.length)return;
+    markers[p.file]=p.locs.map((l,i)=>{
+      const mk=L.marker([l.lat,l.lng],{icon:L.divIcon({className:"pin",html:pinSvg(pinColor(p.status)),iconSize:[30,38],iconAnchor:[15,37]}),title:p.name+(l.name?"・"+l.name:""),keyboard:true}).addTo(map);
+      mk.on("click",e=>{L.DomEvent.stopPropagation(e);showProject(p.file,i)});return mk});
+  });
+  const nc=PROJECTS.filter(p=>!p.locs.length);
   $("#nocoord").hidden=!nc.length;$("#nocoord").textContent=`${nc.length} 案未設定座標 ›`;
 }
 function memberSummary(file){
@@ -520,29 +522,43 @@ function memberSummary(file){
   const short=names.slice(0,2);
   return short.join("、")+(names.length>2?`等 ${names.length} 位`:` ${names.length} 位`);
 }
-function showProject(file){
+let selFile=null,selLine=null;
+function clearSel(){
+  if(selFile&&markers[selFile])markers[selFile].forEach(m=>{const el=m.getElement();el&&el.classList.remove("on")});
+  if(selLine){selLine.remove();selLine=null}selFile=null;
+}
+function showProject(file,idx=0){
   const p=projBy(file);if(!p)return;
-  if(selPin)selPin.classList.remove("on");
-  const mk=markers[file];
+  clearSel();
+  const mks=markers[file]||[], loc=p.locs[idx];
   const row=(k,v,cls="")=>`<div class="info-row"><span class="info-label">${k}：</span><span class="info-value ${cls}">${v}</span></div>`;
+  const locTxt=!p.locs.length?"—":p.locs.length===1?esc(loc.name||"—"):`${esc(loc&&loc.name?loc.name:"第 "+(idx+1)+" 處")}（共 ${p.locs.length} 處）`;
   $("#bsBody").innerHTML=`<div class="sub">工程名稱</div><div class="ttl">${esc(p.name)}</div>`+
-    row("所在縣市",esc(p.county||"—"))+row("執行年份",esc(p.year||"—"))+row("主辦機關",esc(p.agency||"—"))+row("主辦承辦",esc(p.officer||"—"))+
+    row("所在縣市",esc(p.county||"—"))+row("工程地點",locTxt)+row("執行年份",esc(p.year||"—"))+row("主辦機關",esc(p.agency||"—"))+row("主辦承辦",esc(p.officer||"—"))+
     (p.status?row("工程狀態",esc(p.status)):"")+row("審查委員",esc(memberSummary(file)))+row("累計意見",`${p.comments} 則`,"num")+
     `<button class="sheet-btn" data-goto="${esc(file)}">查看本案意見列表</button>`;
   $("#bsheet").classList.remove("off");$("#v-map").classList.add("sheeton");
-  if(mk){selPin=mk.getElement();selPin&&selPin.classList.add("on");
-    /* 讓標點落在抽屜上方可見區域的中間 */
-    const h=$("#bsheet").offsetHeight, z=Math.max(map.getZoom(),13);
-    const c=map.unproject(map.project(mk.getLatLng(),z).add([0,h/2]),z);
-    map.flyTo(c,z,{duration:.7});}
+  if(!mks.length)return;
+  selFile=file;mks.forEach(m=>{const el=m.getElement();el&&el.classList.add("on")});
+  const h=$("#bsheet").offsetHeight;
+  if(p.locs.length>1){
+    /* 同一案多個地點：虛線連起來，畫面包含全部地點（避開下方卡片） */
+    const lls=p.locs.map(l=>[l.lat,l.lng]);
+    selLine=L.polyline(lls,{color:pinColor(p.status),weight:3,dashArray:"6 8",opacity:.9,interactive:false}).addTo(map);
+    map.flyToBounds(lls,{paddingTopLeft:[40,70],paddingBottomRight:[60,h+30],maxZoom:16,duration:.7});
+  }else{
+    const z=Math.max(map.getZoom(),13);
+    const c=map.unproject(map.project(mks[0].getLatLng(),z).add([0,h/2]),z);
+    map.flyTo(c,z,{duration:.7});
+  }
 }
 function showNoCoord(){
-  if(selPin)selPin.classList.remove("on");
-  const nc=PROJECTS.filter(p=>p.lat==null||p.lng==null);
+  clearSel();
+  const nc=PROJECTS.filter(p=>!p.locs.length);
   $("#bsBody").innerHTML=`<div class="sub">尚未設定座標的工程</div><div class="plist">${nc.map(p=>`<button data-show="${esc(p.file)}">${esc(p.name)}</button>`).join("")}</div>`;
   $("#bsheet").classList.remove("off");$("#v-map").classList.add("sheeton");
 }
-function hideSheet(){$("#bsheet").classList.add("off");$("#v-map").classList.remove("sheeton");if(selPin){selPin.classList.remove("on");selPin=null}}
+function hideSheet(){$("#bsheet").classList.add("off");$("#v-map").classList.remove("sheeton");clearSel()}
 function locateMe(){
   if(!window.isSecureContext||!navigator.geolocation){toast("定位需要用 https 網址開啟");return}
   const btn=$("#btnLocate");btn.classList.add("locating");
@@ -642,7 +658,8 @@ async function loadAll(list){
   files.forEach(({p,d},pi)=>{
     const pj=d.project||{};
     const proj={file:p.file,name:pj.name||p.name,county:pj.county||"",year:pj.year||"",agency:pj.agency||"",officer:pj.officer||"",status:pj.status||"",
-      lat:typeof pj.lat==="number"?pj.lat:null,lng:typeof pj.lng==="number"?pj.lng:null,comments:(d.comments||[]).length};
+      locs:(Array.isArray(pj.locations)?pj.locations:(typeof pj.lat==="number"?[{name:"",lat:pj.lat,lng:pj.lng}]:[])).filter(l=>typeof l.lat==="number"&&typeof l.lng==="number"),
+      comments:(d.comments||[]).length};
     PROJECTS.push(proj);
     const ms=(d.meetings||[]).slice().sort((a,b)=>(order.get(a.stage)??9)-(order.get(b.stage)??9)||(a.round||0)-(b.round||0)||String(a.date).localeCompare(String(b.date)));
     const per={};ms.forEach(m=>per[m.stage]=(per[m.stage]||0)+1);
