@@ -486,7 +486,7 @@ function initMap(){
   const b=L.latLngBounds(TW_BOUNDS);
   map=L.map("map",{zoomControl:true,maxBounds:b,maxBoundsViscosity:1,minZoom:7,maxZoom:18,attributionControl:true,zoomSnap:.5});
   map.zoomControl.setPosition("bottomright");map.attributionControl.setPrefix(false);
-  L.tileLayer("https://wmts.nlsc.gov.tw/wmts/EMAP/default/GoogleMapsCompatible/{z}/{y}/{x}",{minZoom:7,maxZoom:18,maxNativeZoom:18,bounds:b,attribution:"© 內政部國土測繪中心"}).addTo(map);
+  L.tileLayer("https://wmts.nlsc.gov.tw/wmts/EMAP5/default/GoogleMapsCompatible/{z}/{y}/{x}",{minZoom:7,maxZoom:18,maxNativeZoom:18,bounds:b,attribution:"© 內政部國土測繪中心"}).addTo(map);
   map.fitBounds([[21.85,119.3],[25.35,122.05]]);
   map.on("click",()=>hideSheet());
   const sel=$("#countySel");
