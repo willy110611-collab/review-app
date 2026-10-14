@@ -7,10 +7,16 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="theme-color" content="#FFFFFF">
 <title>審查意見查詢</title>
+<meta name="apple-mobile-web-app-title" content="審查意見">
+<meta name="description" content="審查意見查詢｜設計者：陳冠瑋｜由 Claude AI 協助設計">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" href="icons/icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="lib/leaflet.css">
+<script>try{var t=localStorage.getItem("theme");if(t==="light"||t==="dark")document.documentElement.dataset.theme=t}catch(e){}</script>
 <style>
 /* =========================================================
    可調整設定（淺色版 v3）
@@ -82,7 +88,9 @@ mark{background:var(--hl);color:inherit;border-radius:3px;padding:0 1px}
 .scope span{overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
 .scope .car{flex:none;color:var(--ink2);font-size:11px}
 .scope[hidden]{display:none}
-.logout{position:absolute;right:var(--pad);top:8px;font-size:12px;color:var(--ink2);border:1px solid var(--line);border-radius:999px;padding:3px 10px}
+.hbtns{position:absolute;right:var(--pad);top:8px;display:flex;gap:8px;align-items:center}
+.themebtn{width:28px;height:28px;border-radius:50%;border:1px solid var(--line);color:var(--ink2);display:flex;align-items:center;justify-content:center}
+.logout{font-size:12px;color:var(--ink2);border:1px solid var(--line);border-radius:999px;padding:3px 10px}
 .logout[hidden]{display:none}
 
 /* ---- 內容區 ---- */
@@ -185,6 +193,18 @@ mark{background:var(--hl);color:inherit;border-radius:3px;padding:0 1px}
 #v-map.sheeton .mlegend{display:none}
 .bsheet:not(.off)~.nocoord,#v-map.sheeton .nocoord{display:none}
 .pin{width:30px!important;height:38px!important}
+.to-gray{filter:grayscale(1)}
+.is-dark .leaflet-tile-pane{filter:brightness(.72) contrast(1.12)}
+.is-dark #map{background:#1E293B}
+.layermenu{position:absolute;right:58px;top:56px;z-index:650;background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow-md);padding:6px;min-width:150px}
+.layermenu[hidden]{display:none}
+.layermenu .lh{font-size:12px;font-weight:700;color:var(--ink2);padding:4px 8px 6px}
+.layermenu button{display:flex;align-items:center;gap:10px;width:100%;padding:8px;border-radius:10px;font-size:14px;text-align:left}
+.layermenu button[aria-pressed="true"]{background:var(--primary-light);color:var(--primary);font-weight:700}
+.sw{width:28px;height:28px;border-radius:7px;border:1px solid var(--line);flex:none}
+.sw-emap{background:linear-gradient(135deg,#F4EFE3 0 45%,#BFE0F5 45% 60%,#E9F3DC 60%)}
+.sw-gray{background:linear-gradient(135deg,#EEE 0 45%,#BBB 45% 60%,#DDD 60%)}
+.sw-photo{background:linear-gradient(135deg,#4F6B3A 0 40%,#7A8F5A 40% 62%,#2F4E66 62%)}
 .pin svg{display:block;filter:drop-shadow(0 2px 3px rgba(0,0,0,.25));transition:transform .15s}
 .pin.on svg{transform:scale(1.25);transform-origin:50% 100%}
 .me-dot{width:16px!important;height:16px!important;border-radius:50%;background:#2563EB;border:3px solid #fff;box-shadow:0 0 0 2px rgba(37,99,235,.35),0 1px 4px rgba(0,0,0,.3)}
@@ -233,6 +253,57 @@ mark{background:var(--hl);color:inherit;border-radius:3px;padding:0 1px}
 .toast{position:absolute;left:50%;bottom:110px;transform:translateX(-50%);background:var(--ink);color:var(--card);font-size:13.5px;padding:9px 16px;border-radius:999px;z-index:960;max-width:86%;text-align:center;box-shadow:var(--shadow-md)}
 .toast[hidden]{display:none}
 .loadmsg{padding:40px var(--pad);text-align:center;color:var(--ink2);line-height:1.8;font-size:14px}
+.spin{width:26px;height:26px;margin:0 auto 10px;border-radius:50%;border:3px solid var(--line);border-top-color:var(--primary);animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.pbar{width:160px;height:4px;border-radius:2px;background:var(--line);margin:10px auto 0;overflow:hidden}
+.pbar i{display:block;height:100%;width:0;background:var(--primary);transition:width .2s}
+/* ---- 待追蹤、動作、釘選、列印 ---- */
+.trk{height:38px;padding:0 12px;border:1px solid var(--line);background:var(--card);border-radius:999px;font-size:14px;color:var(--ink2);white-space:nowrap}
+.trk.on{border-color:#D97706;color:#B45309;background:#FEF3C7;font-weight:700}
+.tg.tk{background:#FEF3C7;color:#B45309;border-color:transparent;font-weight:700}
+.is-dark .trk.on,.is-dark .tg.tk{background:#78350F;color:#FDE68A}
+.trkbar{display:block;width:100%;text-align:left;margin-top:10px;padding:9px 12px;border-radius:10px;background:#FEF3C7;color:#92400E;font-size:13px;line-height:1.5}
+.trkbar b{display:block;font-size:14px}
+.is-dark .trkbar{background:#78350F;color:#FDE68A}
+.tkn{color:#B45309}
+.acts{display:none;gap:8px;margin-top:10px}
+.card.exp .acts{display:flex}
+.acts button{font-size:13px;color:var(--primary);border:1px solid var(--line);border-radius:999px;padding:4px 12px;background:var(--card)}
+.pcw{position:relative}
+.pcw .pc{padding-right:44px}
+.pin{position:absolute;right:calc(var(--pad) + 6px);top:8px;width:34px;height:34px;font-size:20px;color:var(--ink2);border-radius:50%}
+.pin.on{color:#EAB308}
+.newb{display:inline-block;font-size:11px;font-weight:700;color:#fff;background:#DC2626;border-radius:999px;padding:0 7px;margin-right:6px;vertical-align:2px}
+.news{margin:12px var(--pad) 0;padding:10px 14px;border-radius:12px;background:var(--primary-light);color:var(--primary);font-size:14px;text-align:center}
+.about{margin:0 var(--pad);background:var(--card);border:1px solid var(--line);border-radius:var(--r-card);padding:12px 14px;font-size:14px;line-height:1.7}
+.about .sm{font-size:12.5px;color:var(--ink2);margin-top:6px}
+.lock .credit{position:absolute;left:0;right:0;bottom:40px;text-align:center;font-size:12px;color:var(--ink2)}
+.printfoot{display:none}
+@media print{
+  @page{margin:12mm}
+  :root,:root[data-theme="dark"]{--bg:#fff;--card:#fff;--bar:#fff;--ink:#0F172A;--ink2:#475569;--line:#CBD5E1;--primary:#2563EB;--primary-light:#EFF6FF;
+    --s1:#16A34A;--s1-bg:#DCFCE7;--s2:#2563EB;--s2-bg:#DBEAFE;--s3:#7C3AED;--s3-bg:#EDE9FE}
+  .is-dark .trkbar{background:#FEF3C7;color:#92400E}
+  body{background:#fff!important}
+  .stage{padding:0!important;display:block}.device{width:auto!important;height:auto!important;padding:0!important;box-shadow:none!important;border-radius:0!important;background:none!important}
+  .screen{height:auto!important;border-radius:0!important;overflow:visible!important;display:block!important}
+  .island,.statusbar,.homebar,.tabbar,.hdr,#v-search,#v-map,#v-people,.noprint,.sheet-bg,.toast,.lock,.pin{display:none!important}
+  #v-meet{display:block!important;overflow:visible!important}
+  .tl,.ovh,.rep,.trkbar{break-inside:avoid;box-shadow:none!important}
+  .printfoot{display:block;font-size:11px;color:#64748B;margin-top:12px;text-align:center}
+}
+/* ---- 搜尋：相符案件 ---- */
+.hits{margin:4px var(--pad) 0;background:var(--card);border:1px solid var(--line);border-radius:var(--r-card);overflow:hidden;box-shadow:var(--shadow-sm)}
+.hh{font-size:12.5px;font-weight:700;color:var(--ink2);padding:10px 14px 4px}
+.hh2{font-size:12.5px;font-weight:700;color:var(--ink2);padding:14px var(--pad) 0}
+.hit{display:block;width:100%;text-align:left;padding:9px 14px;border-top:1px solid var(--line)}
+.hit:first-of-type{border-top:0}
+.hit .hn{display:block;font-size:14.5px;font-weight:700;line-height:1.45}
+.hit .hm{display:block;font-size:12px;color:var(--ink2);margin-top:2px}
+.hall{display:block;width:100%;padding:10px 14px;border-top:1px solid var(--line);color:var(--primary);font-weight:700;font-size:13.5px;text-align:left}
+.list .hits{margin:0}
+.hint{text-align:center;color:var(--ink2);font-size:14px;line-height:1.8;padding:18px var(--pad) 14px}
+.hint b{color:var(--ink)}
 /* ---- 總覽／委員側寫 ---- */
 .ovf{padding:12px var(--pad) 4px}
 .ovf input{width:100%;height:40px;border-radius:999px;border:1px solid var(--line);background:var(--card);padding:0 14px;font-size:15px;color:var(--ink)}
@@ -267,6 +338,7 @@ button.chp{cursor:pointer}
 .tl .ft{display:flex;align-items:center;justify-content:space-between;margin-top:10px;font-size:12.5px;color:var(--ink2)}
 .tl .ft button{color:var(--primary);font-weight:700;font-size:13px}
 .warn{color:#B45309}
+.is-dark .warn{color:#FBBF24}
 .rep{margin:0 var(--pad);background:var(--card);border:1px solid var(--line);border-radius:var(--r-card);overflow:hidden}
 .rep button{display:flex;width:100%;text-align:left;padding:10px 14px;border-bottom:1px solid var(--line);font-size:14px;gap:8px;align-items:center}
 .rep button:last-child{border-bottom:0}
@@ -296,7 +368,7 @@ button.chp{cursor:pointer}
    <header class="hdr">
      <h1 id="title">審查意見查詢</h1>
      <button class="scope" id="scope" hidden><span id="scopeTxt"></span><b class="car">▼</b></button>
-     <button class="logout" id="logout" hidden>登出</button>
+     <div class="hbtns"><button class="themebtn" id="themeBtn" aria-label="設定" title="設定"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="8.5"/><path d="M12 3.5a8.5 8.5 0 0 1 0 17z" fill="currentColor"/></svg></button><button class="logout" id="logout" hidden>登出</button></div>
    </header>
 
    <!-- 查詢 -->
@@ -310,9 +382,11 @@ button.chp{cursor:pointer}
        <div class="seg" role="group" aria-label="審查階段" id="seg"></div>
        <div class="row2">
          <button class="who" id="who"><span id="whoTxt">委員／單位：全部</span><span aria-hidden="true">▾</span></button>
+         <button class="trk" id="trackBtn" title="只看辦理情形寫「後續辦理／下次補充」的意見">待追蹤</button>
          <button class="reset" id="reset">重設</button>
        </div>
      </div>
+     <div id="phits" hidden></div>
      <div class="count" id="count"></div>
      <div class="list" id="list"></div>
    </section>
@@ -323,8 +397,11 @@ button.chp{cursor:pointer}
      <div class="map-top"><label class="county"><span id="countyTxt">縣市：全部</span><select id="countySel" aria-label="縣市"></select></label></div>
      <div class="mapbtns">
        <button id="btnLocate" aria-label="回到我的位置" title="回到我的位置"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l18-8-8 18-2-8z"/></svg></button>
+       <button id="btnLayer" aria-label="地圖樣式" title="地圖樣式" aria-expanded="false"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 3l9 5-9 5-9-5z"/><path d="M3 13l9 5 9-5"/></svg></button>
        <button id="btnHome" aria-label="顯示全部範圍" title="顯示全部範圍"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
      </div>
+     <div class="layermenu" id="layerMenu" hidden><div class="lh">地圖樣式</div>
+       <button data-base="emap"><i class="sw sw-emap"></i>電子地圖</button><button data-base="gray"><i class="sw sw-gray"></i>灰階</button><button data-base="photo"><i class="sw sw-photo"></i>航照</button></div>
      <button class="nocoord" id="nocoord" hidden></button>
      <div class="mlegend" aria-label="圖例"><span><i style="background:#EAB308"></i>進行中</span><span><i style="background:#16A34A"></i>已完成</span><span><i style="background:#94A3B8"></i>未設定</span></div>
      <div class="bsheet off" id="bsheet" role="dialog" aria-label="工程簡述">
@@ -367,6 +444,7 @@ button.chp{cursor:pointer}
      <label class="rm"><input type="checkbox" id="remember" checked>在這支手機記住密碼</label>
      <button class="go" id="go" type="submit">開啟</button>
      <div class="err" id="pwErr" role="alert"></div>
+     <div class="credit">設計者：陳冠瑋｜由 Claude AI 協助設計</div>
    </form>
    <div class="toast" id="toast" hidden></div>
    <div class="homebar" aria-hidden="true"></div>
@@ -383,6 +461,7 @@ const STAGES=["期初","期中","期末"], PAGE=40, CLAMP_CHARS=60;
 const GROUPS=["審查委員","主辦單位","相關機關與單位","會議結論"];
 /* 地圖：台灣本島＋澎湖、金門、馬祖（可拖曳範圍） */
 const TW_BOUNDS=[[21.75,117.95],[26.55,122.25]];
+const MAIN_VIEW=[[21.88,120.02],[25.32,122.02]]; /* 預設畫面：台灣本島（仍可拖曳到澎湖、金門、馬祖） */
 const COUNTIES={ /* [南,西,北,東] 概略範圍 */
  "基隆市":[25.05,121.62,25.20,121.82],"臺北市":[24.96,121.45,25.21,121.67],"新北市":[24.67,121.28,25.30,122.01],
  "桃園市":[24.59,120.98,25.12,121.47],"新竹市":[24.73,120.88,24.86,121.03],"新竹縣":[24.40,120.95,24.95,121.42],
@@ -398,7 +477,15 @@ const COUNTIES={ /* [南,西,北,東] 概略範圍 */
    狀態
    ========================================================= */
 let PROJECTS=[], DATA=[], MEETS=[], MEETBY={}, people=[];
-const st={q:"",stage:"全部",who:null,meet:null,topic:null,shown:PAGE,open:new Set(),exp:new Set(),county:"全部縣市",proj:null,view:"search"};
+/* 漸進載入：一開始只有索引；案件內容用到才下載 */
+let IDX=null, PEOPLE_IDX={}, SEARCH=null, SEARCH_P=null, LEGACY=false;
+const LOADED=new Set(), LOADING=new Map();
+const APP_VER="v4.3", CREDIT="設計者：陳冠瑋", CREDIT_AI="由 Claude AI 協助設計";
+const TRACK="後續"; /* 辦理情形分類「後續」＝待追蹤 */
+const lsGet=(k,d)=>{try{const v=JSON.parse(localStorage.getItem(k)||"null");return v??d}catch(e){return d}};
+const lsSet=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
+let PINS=new Set(lsGet("pins",[])), NEWC={};
+const st={track:false,q:"",stage:"全部",who:null,meet:null,topic:null,shown:PAGE,open:new Set(),exp:new Set(),county:"全部縣市",proj:null,view:"search"};
 /* 議題詞庫：意見或辦理情形出現任一關鍵字，就算這個議題（可自行增修） */
 const TOPICS=[
  ["用地取得",/用地|徵收|地主|租地|三七五|土地取得|地上物|私有地/],["生態檢核",/生態|棲地|物種|動物|植栽|樹木|鳥類|魚類/],
@@ -444,7 +531,7 @@ const multi=()=>scopeFiles().size>1;
 function scoped(){const s=scopeFiles();return DATA.filter(d=>s.has(d.pid))}
 function saveScope(){try{localStorage.setItem("scope",JSON.stringify({county:st.county,proj:st.proj}))}catch(e){}}
 function setScope(county,proj){
-  Object.assign(st,{county,proj,who:null,meet:null,topic:null,stage:"全部",shown:PAGE});
+  Object.assign(st,{county,proj,who:null,meet:null,topic:null,track:false,stage:"全部",shown:PAGE});
   saveScope();people=buildPeople();renderScope();render();renderPeople();renderMeets();
 }
 function renderScope(){
@@ -475,13 +562,17 @@ function openScopeSheet(){
    查詢
    ========================================================= */
 function buildPeople(){
-  const m=new Map();scoped().forEach(d=>{if(!m.has(d.committee))m.set(d.committee,{name:d.committee,c:{期初:0,期中:0,期末:0}});const c=m.get(d.committee).c;if(d.stage in c)c[d.stage]++});
-  return [...m.values()];
+  const s=scopeFiles(),out=[];
+  Object.entries(PEOPLE_IDX).forEach(([name,o])=>{const c={期初:0,期中:0,期末:0};let n=0;
+    Object.entries(o.p).forEach(([f,a])=>{if(s.has(f))STAGES.forEach((st_,i)=>{c[st_]+=a[i];n+=a[i]})});
+    if(n)out.push({name,c})});
+  return out;
 }
+const projsOf=name=>Object.keys(PEOPLE_IDX[name]?.p||{}).filter(f=>projBy(f));
 function matchQ(d,t){if(!t.length)return true;const hay=(d.comment+" "+d.response+" "+d.committee+" "+d.section+" "+d.note).toLowerCase();return t.every(x=>hay.includes(x))}
 function base(){
   const t=terms().map(x=>x.toLowerCase());
-  return scoped().filter(d=>(!st.who||d.committee===st.who)&&(!st.meet||d.mkey===st.meet)&&(!st.topic||d.topics.includes(st.topic))&&matchQ(d,t));
+  return scoped().filter(d=>(!st.who||d.committee===st.who)&&(!st.meet||d.mkey===st.meet)&&(!st.topic||d.topics.includes(st.topic))&&(!st.track||d.rt===TRACK)&&matchQ(d,t));
 }
 function filtered(){const b=base();return st.stage==="全部"?b:b.filter(d=>d.stage===st.stage)}
 function renderSeg(){
@@ -507,23 +598,94 @@ function card(d){
     ?`<button class="resp-btn" aria-expanded="${open}" data-id="${esc(d.id)}">辦理情形 <span class="chev">▼</span></button><div class="resp" ${open?"":"hidden"}>${hl(d.response)}</div>`
     :`<div class="noresp">此次會議紀錄未附辦理情形</div>`;
   return `<article class="card${exp?" exp":""}" data-s="${esc(d.stage)}" data-id="${esc(d.id)}">
-    <div class="tags"><span class="tg st">${esc(d.stage)}${m&&m.multi?roundTxt(m.round):""}</span><span class="tg mb">${hl(d.committee)}</span><span class="tg">第 ${esc(d.no)} 點</span>${d.note?`<span class="tg">${esc(d.note)}</span>`:""}${d.section?`<span class="tg">${hl(d.section)}</span>`:""}${multi()?`<span class="tg pj">${esc(d.pname)}</span>`:""}</div>
-    <p class="txt">${hl(d.comment)}</p><div class="morehint">點擊展開全文 ▾</div>${resp}</article>`;
+    <div class="tags"><span class="tg st">${esc(d.stage)}${m&&m.multi?roundTxt(m.round):""}</span>${d.rt===TRACK?`<span class="tg tk">待追蹤</span>`:""}<span class="tg mb">${hl(d.committee)}</span><span class="tg">第 ${esc(d.no)} 點</span>${d.note?`<span class="tg">${esc(d.note)}</span>`:""}${d.section?`<span class="tg">${hl(d.section)}</span>`:""}${multi()?`<span class="tg pj">${esc(d.pname)}</span>`:""}</div>
+    <p class="txt">${hl(d.comment)}</p><div class="morehint">點擊展開全文 ▾</div>
+    <div class="acts"><button data-copy="${esc(d.id)}">複製</button>${navigator.share?`<button data-share="${esc(d.id)}">分享</button>`:""}</div>${resp}</article>`;
 }
 function markClamped(){
   document.querySelectorAll("#list .card:not(.exp)").forEach(c=>{const t=c.querySelector(".txt");c.classList.toggle("clamped",t.scrollHeight>t.clientHeight+2)});
 }
 function renderList(){
   const r=filtered();const mt=st.meet&&MEETBY[st.meet];
-  $("#count").textContent=`共 ${r.length} 則意見`+(mt?`（${mt.title}）`:"")+(st.topic?`，議題「${st.topic}」`:"")+(st.q.trim()?`，關鍵字「${st.q.trim()}」`:"");
+  $("#count").textContent=`共 ${r.length} 則意見`+(mt?`（${mt.title}）`:"")+(st.track?"，待追蹤":"")+(st.topic?`，議題「${st.topic}」`:"")+(st.q.trim()?`，關鍵字「${st.q.trim()}」`:"");
   $("#list").innerHTML=r.length?r.slice(0,st.shown).map(card).join("")+(r.length>st.shown?`<button class="more" id="more">載入更多（尚有 ${r.length-st.shown} 則）</button>`:"")
     :`<div class="empty">找不到符合的意見。<br>試試較短的關鍵字，或把階段切回「全部」。</div>`;
   $("#whoTxt").textContent="委員／單位："+(st.who||"全部");
-  $("#who").classList.toggle("on",!!st.who);
+  $("#who").classList.toggle("on",!!st.who);$("#trackBtn").classList.toggle("on",st.track);
   $("#clr").hidden=!st.q;
   requestAnimationFrame(markClamped);
 }
-function render(){renderSeg();renderList()}
+/* 跨案搜尋：用搜尋索引找出「可能有」的案子，只下載這些 */
+const normQ=t=>t.toLowerCase().replace(/[^\p{L}\p{N}]+/gu,"");
+let GRAMS=null;
+function gramMap(){
+  if(GRAMS)return GRAMS;GRAMS=new Map();
+  const add=(grp,size)=>grp.forEach(([ids,str])=>{const ch=Array.from(str),fs=ids.map(i=>SEARCH.files[i]);for(let i=0;i<ch.length;i+=size)GRAMS.set(ch.slice(i,i+size).join(""),fs)});
+  add(SEARCH.g1,1);add(SEARCH.g2,2);return GRAMS;
+}
+function gramCands(ts){
+  if(!SEARCH)return null; /* 沒有索引（舊資料）：不限制 */
+  const g=gramMap();let c=null;
+  ts.forEach(t=>{const ch=Array.from(normQ(t));if(!ch.length)return;
+    const gs=ch.length===1?[ch[0]]:ch.slice(1).map((x,i)=>ch[i]+x);
+    gs.forEach(k=>{const fs=new Set(g.get(k)||[]);c=c?new Set([...c].filter(f=>fs.has(f))):fs})});
+  return c;
+}
+function needFiles(){
+  const s=scopeFiles();
+  if(s.size<=1)return {files:s};
+  let c=null;const and=x=>{c=c?new Set([...c].filter(f=>x.has(f))):x};
+  if(st.meet)and(new Set([MEETBY[st.meet]?.pid||st.meet.split("|")[0]]));
+  if(st.who)and(new Set(projsOf(st.who)));
+  if(st.track)and(new Set(PROJECTS.filter(p=>p.track>0).map(p=>p.file)));
+  if(terms().length){const g=gramCands(terms());and(g||s)}
+  if(!c)return {prompt:true};
+  return {files:new Set([...s].filter(f=>c.has(f)))};
+}
+function loadingHTML(msg){return `<div class="loadmsg"><div class="spin"></div>${msg}</div>`}
+let renderSeq=0;
+async function render(){
+  const my=++renderSeq;
+  renderHits();
+  try{
+    if(scopeFiles().size>1&&terms().length&&IDX&&IDX.search&&!SEARCH){$("#list").innerHTML=loadingHTML("準備搜尋索引…");await loadSearch();if(my!==renderSeq)return}
+    const nf=needFiles();
+    if(nf.prompt){renderPrompt();return}
+    const miss=[...nf.files].filter(f=>!LOADED.has(f));
+    if(miss.length){$("#count").textContent="";$("#list").innerHTML=loadingHTML(`下載 ${miss.length} 案資料…<div class="pbar"><i id="pbar"></i></div>`);await ensure(miss);if(my!==renderSeq)return}
+  }catch(e){console.error(e);$("#list").innerHTML=`<div class="loadmsg">資料下載失敗，請確認網路連線。<br><small>${esc(e.message)}</small></div>`;return}
+  renderSeg();renderList();
+}
+/* 全部工程、沒有任何條件：不下載全部資料，改顯示提示與最近更新的案件 */
+function renderPrompt(){
+  const s=scopeFiles(),ps=PROJECTS.filter(p=>s.has(p.file)),tot=ps.reduce((a,p)=>a+p.comments,0);
+  $("#seg").innerHTML=["全部",...STAGES].map(x=>`<button data-s="${x}" aria-pressed="${st.stage===x}">${x}</button>`).join("");
+  $("#count").textContent="";
+  $("#whoTxt").textContent="委員／單位："+(st.who||"全部");$("#who").classList.toggle("on",!!st.who);$("#trackBtn").classList.toggle("on",st.track);$("#clr").hidden=!st.q;
+  const pinned=ps.filter(p=>PINS.has(p.file));
+  const recent=ps.filter(p=>!PINS.has(p.file)).sort((a,b)=>String(b.updated).localeCompare(String(a.updated))).slice(0,5);
+  const nNew=ps.reduce((a,p)=>a+(NEWC[p.file]||0),0), pNew=ps.filter(p=>NEWC[p.file]).length;
+  $("#list").innerHTML=(nNew?`<div class="news">自上次開啟後，${pNew} 案新增 <b>${nNew}</b> 則意見</div>`:"")+`<div class="hint">輸入關鍵字，或選擇委員／單位，<br>即可在 <b>${ps.length}</b> 案、<b>${tot}</b> 則意見中搜尋。</div>
+    ${pinned.length?`<div class="hits" style="margin-bottom:12px"><div class="hh">★ 釘選的案件</div>${pinned.map(hitRow).join("")}</div>`:""}
+    <div class="hits"><div class="hh">最近更新的案件</div>${recent.map(hitRow).join("")}<button class="hall" data-hall="">看全部 ${ps.length} 案 ›</button></div>`;
+}
+/* 相符案件（搜尋分兩區：上方案件、下方意見） */
+const hitRow=p=>`<button class="hit" data-hit="${esc(p.file)}"><span class="hn">${NEWC[p.file]?`<span class="newb">+${NEWC[p.file]} 新</span>`:""}${hl(p.name)}</span><span class="hm">${hl([p.county,p.year?p.year+"年":"",p.officer,...(p.tags||[]).filter(t=>!GENERIC_TAGS.has(t))].filter(Boolean).join("・"))}・${p.comments} 則</span></button>`;
+function projHits(){
+  const t=terms().map(x=>x.toLowerCase());if(!t.length)return [];
+  return PROJECTS.filter(p=>p.file!==st.proj&&(st.county==="全部縣市"||p.county===st.county))
+    .filter(p=>{const h=[p.name,p.officer,p.agency,p.county,p.year,p.summary,(p.tags||[]).join(" ")].join(" ").toLowerCase();return t.every(x=>h.includes(x))});
+}
+function renderHits(){
+  const h=projHits(),box=$("#phits");
+  box.hidden=!h.length;if(!h.length){box.innerHTML="";return}
+  box.innerHTML=`<div class="hits"><div class="hh">相符案件 ${h.length}</div>${h.slice(0,3).map(hitRow).join("")}${h.length>3?`<button class="hall" data-hall="${esc(st.q.trim())}">看全部 ${h.length} 案 ›</button>`:""}</div><div class="hh2">相符意見</div>`;
+}
+function openHit(e){
+  const b=e.target.closest("[data-hit]");if(b){const p=projBy(b.dataset.hit);$("#q").value="";st.q="";setScope(p.county||"全部縣市",p.file);go("meet");$("#v-meet").scrollTop=0;return true}
+  const a=e.target.closest("[data-hall]");if(a){st.ovq=a.dataset.hall;setScope(st.county,null);go("meet");$("#v-meet").scrollTop=0;return true}
+  return false;
+}
 
 /* =========================================================
    委員／會議
@@ -542,7 +704,7 @@ function renderPeople(){
 const GENERIC_TAGS=new Set(["設計案","規劃案"]);
 const dateKey=d=>{const m=/^(\d+)\/(\d+)\/(\d+)$/.exec(d||"");return m?(+m[1])*10000+(+m[2])*100+(+m[3]):0};
 function topTopics(ds,n=3){const c={};ds.forEach(d=>d.topics.forEach(t=>c[t]=(c[t]||0)+1));return Object.entries(c).sort((a,b)=>b[1]-a[1]).slice(0,n)}
-function stagesOf(file){return STAGES.filter(s=>MEETS.some(m=>m.pid===file&&m.stage===s))}
+function stagesOf(file){const p=projBy(file);if(p&&p.stages)return p.stages;return STAGES.filter(s=>MEETS.some(m=>m.pid===file&&m.stage===s))}
 function progHTML(file){const has=stagesOf(file);
   return `<div class="prog">${STAGES.map((s,i)=>`${i?"<b></b>":""}<i class="${has.includes(s)?"on"+(i+1):""}"></i>${s}`).join("")}</div>`}
 function autoSummary(p){
@@ -556,6 +718,8 @@ function renderMeets(){
   if(!PROJECTS.length){box.innerHTML=`<div class="loadmsg">尚無資料</div>`;return}
   if(!st.proj){renderProjectList();return}
   const p=projBy(st.proj);if(!p){renderProjectList();return}
+  if(!LOADED.has(p.file)){box.innerHTML=loadingHTML("下載案件資料…");const f=p.file;
+    ensure([f]).then(()=>{if(st.proj===f)renderMeets()}).catch(e=>box.innerHTML=`<div class="loadmsg">資料下載失敗<br><small>${esc(e.message)}</small></div>`);return}
   const ds=DATA.filter(d=>d.pid===p.file), ms=MEETS.filter(m=>m.pid===p.file);
   const meta=[p.county,p.year?p.year+"年":"",p.status].filter(Boolean).join("・");
   let h=`<div class="ovh"><div class="nm">${esc(p.name)}</div>
@@ -564,7 +728,8 @@ function renderMeets(){
       <div class="info-row"><span class="info-label">負責同事</span><span class="info-value">${esc(p.officer||"—")}</span></div>
       <div class="info-row"><span class="info-label">主辦機關</span><span class="info-value">${esc(p.agency||"—")}</span></div></div>
     ${p.tags.length?`<div class="chipr">${p.tags.map(t=>`<span class="chp${GENERIC_TAGS.has(t)?" g":""}">${esc(t)}</span>`).join("")}</div>`:""}
-    <div class="sum${p.summary?"":" auto"}">${esc(p.summary||autoSummary(p))}</div>${progHTML(p.file)}</div>`;
+    <div class="sum${p.summary?"":" auto"}">${esc(p.summary||autoSummary(p))}</div>${progHTML(p.file)}
+    ${(()=>{const n=ds.filter(d=>d.rt===TRACK).length;return n?`<button class="trkbar" data-track="1"><b>待追蹤 ${n} 則</b><span>辦理情形寫「後續辦理／下次補充」，可確認下一期是否已處理 ›</span></button>`:""})()}</div>`;
   /* 審查經過 */
   h+=`<div class="ovsec">審查經過</div>`;
   h+=ms.map(m=>{const md=ds.filter(d=>d.mkey===m.key), con=md.filter(d=>groupOf(d.committee)==="會議結論"||d.committee==="會議結論");
@@ -573,7 +738,7 @@ function renderMeets(){
       <div class="ttl">${esc(m.title)}${m.chair?"｜主持："+esc(m.chair):""}</div>
       ${tp.length?`<div class="chipr">${tp.map(([t,n])=>`<button class="chp" data-topic="${esc(t)}" data-meet="${esc(m.key)}">${esc(t)} ×${n}</button>`).join("")}</div>`:""}
       ${con.length?`<div class="con"><div class="lb">會議結論</div>${con.slice(0,3).map(c=>`<div>${esc(c.comment.length>90?c.comment.slice(0,90)+"…":c.comment)}</div>`).join("")}${con.length>3?`<div class="lb">…還有 ${con.length-3} 則</div>`:""}</div>`:""}
-      <div class="ft"><span class="${nores?"warn":""}">${nores?`未附辦理情形 ${nores} 則`:"全部已回覆"}</span><button data-meet="${esc(m.key)}">看本場意見 ›</button></div></div>`}).join("")||`<div class="loadmsg">尚無會議</div>`;
+      <div class="ft"><span class="${nores?"warn":""}">${nores?`未附辦理情形 ${nores} 則`:"全部已回覆"}${(()=>{const k=md.filter(d=>d.rt===TRACK).length;return k?`<span class="tkn">・待追蹤 ${k}</span>`:""})()}</span><button data-meet="${esc(m.key)}">看本場意見 ›</button></div></div>`}).join("")||`<div class="loadmsg">尚無會議</div>`;
   /* 反覆被提的議題 */
   const rep_=TOPICS.map(([t])=>{const st_=STAGES.filter(s=>ds.some(d=>d.stage===s&&d.topics.includes(t)));return [t,st_,ds.filter(d=>d.topics.includes(t)).length]})
     .filter(([,st_])=>st_.length>=2).sort((a,b)=>b[1].length-a[1].length||b[2]-a[2]).slice(0,6);
@@ -586,31 +751,39 @@ function renderMeets(){
   const myTags=p.tags.filter(t=>!GENERIC_TAGS.has(t));
   const sim=PROJECTS.filter(q=>q.file!==p.file).map(q=>[q,q.tags.filter(t=>myTags.includes(t)).length]).filter(([,n])=>n>0).sort((a,b)=>b[1]-a[1]).slice(0,5);
   if(sim.length)h+=`<div class="ovsec">類似案件（可以去問負責同事）</div><div class="rep">${sim.map(([q])=>`<button data-proj="${esc(q.file)}"><span class="k" style="font-weight:500">${esc(q.name)}</span><span class="v">${esc(q.officer||"—")} ›</span></button>`).join("")}</div>`;
-  h+=`<div style="padding:16px var(--pad)"><button class="more" style="width:100%;margin:0" data-allq="1">查看本案全部 ${ds.length} 則意見</button></div>`;
+  h+=`<div style="padding:16px var(--pad)"><button class="more" style="width:100%;margin:0" data-allq="1">查看本案全部 ${ds.length} 則意見</button>
+    <button class="more noprint" style="width:100%;margin:10px 0 0" data-print="1">列印／存成 PDF（給長官）</button>
+    <div class="printfoot">${esc(p.name)}｜列印時間 ${new Date().toLocaleString("zh-TW")}｜審查意見查詢 ${APP_VER}｜${CREDIT}・${CREDIT_AI}</div></div>`;
   box.innerHTML=h;
 }
 function renderProjectList(){
   const box=$("#meets"), q=(st.ovq||"").trim();
   const s=scopeFiles();
   const ps=PROJECTS.filter(p=>s.has(p.file)).filter(p=>!q||[p.name,p.officer,p.agency,p.county,p.tags.join(" ")].join(" ").includes(q))
-    .sort((a,b)=>(String(b.year).localeCompare(String(a.year)))||a.name.localeCompare(b.name));
+    .sort((a,b)=>(PINS.has(b.file)-PINS.has(a.file))||(String(b.year).localeCompare(String(a.year)))||a.name.localeCompare(b.name));
   box.innerHTML=`<div class="ovf"><input id="ovq" type="search" placeholder="搜尋案名、負責同事、標籤、機關…" value="${esc(q)}" autocomplete="off"></div>
    <div class="sec-h" style="padding-top:8px">共 ${ps.length} 案（點選看總覽）</div>`+
-   ps.map(p=>`<button class="pc" data-proj="${esc(p.file)}"><div class="nm">${esc(p.name)}</div>
+   ps.map(p=>`<div class="pcw"><button class="pc" data-proj="${esc(p.file)}"><div class="nm">${NEWC[p.file]?`<span class="newb">+${NEWC[p.file]} 新</span>`:""}${esc(p.name)}</div>
      <div class="mt2">${esc([p.county,p.year?p.year+"年":"",p.officer].filter(Boolean).join("・"))}・${p.comments} 則</div>
-     ${p.tags.length?`<div class="chipr">${p.tags.map(t=>`<span class="chp${GENERIC_TAGS.has(t)?" g":""}">${esc(t)}</span>`).join("")}</div>`:""}${progHTML(p.file)}</button>`).join("");
+     ${p.tags.length?`<div class="chipr">${p.tags.map(t=>`<span class="chp${GENERIC_TAGS.has(t)?" g":""}">${esc(t)}</span>`).join("")}</div>`:""}${progHTML(p.file)}</button><button class="pin${PINS.has(p.file)?" on":""}" data-pin="${esc(p.file)}" aria-label="釘選" title="釘選">${PINS.has(p.file)?"★":"☆"}</button></div>`).join("");
   const inp=$("#ovq");inp.oninput=()=>{st.ovq=inp.value;const pos=inp.selectionStart;renderProjectList();const n=$("#ovq");n.focus();n.setSelectionRange(pos,pos)};
 }
 
+function togglePin(f){PINS.has(f)?PINS.delete(f):PINS.add(f);lsSet("pins",[...PINS]);toast(PINS.has(f)?"已釘選，會排在最前面":"已取消釘選")}
 /* ---------- 委員側寫（跨全部案子） ---------- */
-function openProfile(name){
+async function openProfile(name){
+  $("#sheetTtl").textContent="委員／單位側寫";$("#sheetBody").onclick=null;
+  const fs=projsOf(name);
+  if(fs.some(f=>!LOADED.has(f))){$("#sheetBody").innerHTML=loadingHTML(`下載 ${fs.length} 案資料…<div class="pbar"><i id="pbar"></i></div>`);$("#sheetBg").hidden=false;
+    try{await ensure(fs)}catch(e){$("#sheetBody").innerHTML=`<div class="loadmsg">資料下載失敗<br><small>${esc(e.message)}</small></div>`;return}}
   const ds=DATA.filter(d=>d.committee===name);
   const projs=[...new Set(ds.map(d=>d.pid))].map(f=>projBy(f)).filter(Boolean);
   const meets=new Set(ds.map(d=>d.mkey)).size;
   const tp=topTopics(ds,5);
   const recent=ds.slice().sort((a,b)=>dateKey(MEETBY[b.mkey]?.date)-dateKey(MEETBY[a.mkey]?.date)).slice(0,5);
   $("#sheetTtl").textContent="委員／單位側寫";
-  $("#sheetBody").innerHTML=`<div class="pf"><div class="nm">${esc(name)}</div><div class="rl">${esc(groupOf(name))}</div>
+  const po=PEOPLE_IDX[name]||{};
+  $("#sheetBody").innerHTML=`<div class="pf"><div class="nm">${esc(name)}</div><div class="rl">${esc(groupOf(name))}${po.u?"｜"+esc(po.u):""}</div>${po.x?`<div class="rl">專長：${esc(po.x)}</div>`:""}
     <div class="kpi"><div><b>${projs.length}</b><span>參與案子</span></div><div><b>${meets}</b><span>出席會議</span></div><div><b>${ds.length}</b><span>意見</span></div></div>
     ${tp.length?`<div class="ovsec" style="padding-left:0">最常關注</div><div class="chipr" style="margin-top:0">${tp.map(([t,n])=>`<button class="chp" data-ptopic="${esc(t)}">${esc(t)} ×${n}</button>`).join("")}</div>`:""}
     <div class="ovsec" style="padding-left:0">參與的案子</div><div class="rep" style="margin:0">${projs.map(p=>`<button data-proj="${esc(p.file)}"><span class="k" style="font-weight:500">${esc(p.name)}</span><span class="v">${ds.filter(d=>d.pid===p.file).length} 則 ›</span></button>`).join("")}</div>
@@ -628,6 +801,21 @@ function openProfile(name){
    地圖
    ========================================================= */
 let map=null,markers={},meMarker=null,meCircle=null;
+/* 底圖（國土測繪中心 WMTS）：電子地圖／灰階／航照 */
+const BASEMAPS={emap:{name:"電子地圖",id:"EMAP5"},gray:{name:"灰階",id:"EMAP01"},photo:{name:"航照",id:"PHOTO2"}};
+let BASE_KEY="emap",baseLayer=null;
+try{const k=localStorage.getItem("basemap");if(BASEMAPS[k])BASE_KEY=k}catch(e){}
+function setBase(k){
+  BASE_KEY=k;try{localStorage.setItem("basemap",k)}catch(e){}
+  if(baseLayer)baseLayer.remove();
+  const mk=(id,cls)=>L.tileLayer(`https://wmts.nlsc.gov.tw/wmts/${id}/default/GoogleMapsCompatible/{z}/{y}/{x}`,{minZoom:7,maxZoom:18,maxNativeZoom:18,bounds:L.latLngBounds(TW_BOUNDS),className:cls||"",attribution:"© 內政部國土測繪中心"});
+  baseLayer=mk(BASEMAPS[k].id,"base-"+k).addTo(map);
+  if(k==="gray"){ /* 灰階圖層讀不到時，改用電子地圖轉灰階 */
+    let ok=false,bad=0;baseLayer.on("tileload",()=>ok=true);
+    baseLayer.on("tileerror",()=>{if(!ok&&++bad===3&&BASE_KEY==="gray"){baseLayer.remove();baseLayer=mk("EMAP5","base-gray to-gray").addTo(map)}});
+  }
+  document.querySelectorAll("#layerMenu [data-base]").forEach(b=>b.setAttribute("aria-pressed",b.dataset.base===k));
+}
 const PIN_COLOR={"進行中":"#EAB308","已完成":"#16A34A"};
 const pinColor=st=>PIN_COLOR[st]||"#94A3B8";
 const pinSvg=c=>`<svg width="30" height="38" viewBox="0 0 30 38"><path d="M15 37s12-12.2 12-22A12 12 0 0 0 3 15c0 9.8 12 22 12 22z" fill="${c}" stroke="#fff" stroke-width="2"/><circle cx="15" cy="15" r="4.5" fill="#fff"/></svg>`;
@@ -636,13 +824,13 @@ function initMap(){
   const b=L.latLngBounds(TW_BOUNDS);
   map=L.map("map",{zoomControl:true,maxBounds:b,maxBoundsViscosity:1,minZoom:7,maxZoom:18,attributionControl:true,zoomSnap:.5});
   map.zoomControl.setPosition("bottomright");map.attributionControl.setPrefix(false);
-  L.tileLayer("https://wmts.nlsc.gov.tw/wmts/EMAP5/default/GoogleMapsCompatible/{z}/{y}/{x}",{minZoom:7,maxZoom:18,maxNativeZoom:18,bounds:b,attribution:"© 內政部國土測繪中心"}).addTo(map);
-  map.fitBounds([[21.85,119.3],[25.35,122.05]]);
+  setBase(BASE_KEY);
+  map.fitBounds(MAIN_VIEW);
   map.on("click",()=>hideSheet());
   const sel=$("#countySel");
   sel.innerHTML=`<option value="">全部</option>`+Object.keys(COUNTIES).map(c=>`<option>${c}</option>`).join("");
   sel.onchange=()=>{const c=sel.value;$("#countyTxt").textContent="縣市："+(c||"全部");hideSheet();
-    if(!c)map.flyToBounds([[21.85,119.3],[25.35,122.05]],{duration:.6});else{const r=COUNTIES[c];map.flyToBounds([[r[0],r[1]],[r[2],r[3]]],{duration:.6,padding:[10,10]})}};
+    if(!c)map.flyToBounds(MAIN_VIEW,{duration:.6});else{const r=COUNTIES[c];map.flyToBounds([[r[0],r[1]],[r[2],r[3]]],{duration:.6,padding:[10,10]})}};
   drawPins();
 }
 function drawPins(){
@@ -657,7 +845,7 @@ function drawPins(){
   $("#nocoord").hidden=!nc.length;$("#nocoord").textContent=`${nc.length} 案未設定座標 ›`;
 }
 function memberSummary(file){
-  const names=[...new Set(DATA.filter(d=>d.pid===file&&groupOf(d.committee)==="審查委員").map(d=>d.committee))];
+  const names=Object.keys(PEOPLE_IDX).filter(n=>PEOPLE_IDX[n].p[file]&&groupOf(n)==="審查委員");
   if(!names.length)return "—";
   const short=names.slice(0,2);
   return short.join("、")+(names.length>2?`等 ${names.length} 位`:` ${names.length} 位`);
@@ -729,9 +917,22 @@ function go(v){
 let tmr;
 $("#q").addEventListener("input",e=>{clearTimeout(tmr);tmr=setTimeout(()=>{st.q=e.target.value;st.shown=PAGE;st.exp.clear();st.open.clear();render()},150)});
 $("#clr").onclick=()=>{$("#q").value="";st.q="";st.shown=PAGE;st.exp.clear();st.open.clear();render();$("#q").focus()};
-$("#seg").onclick=e=>{const b=e.target.closest("button");if(!b)return;st.stage=b.dataset.s;if(st.meet&&MEETBY[st.meet].stage!==st.stage&&st.stage!=="全部")st.meet=null;st.shown=PAGE;render();$("#v-search").scrollTop=0};
-$("#reset").onclick=()=>{Object.assign(st,{q:"",stage:"全部",who:null,meet:null,topic:null,shown:PAGE});st.exp.clear();st.open.clear();$("#q").value="";render()};
+$("#seg").onclick=e=>{const b=e.target.closest("button");if(!b)return;st.stage=b.dataset.s;if(st.meet&&MEETBY[st.meet]&&MEETBY[st.meet].stage!==st.stage&&st.stage!=="全部")st.meet=null;st.shown=PAGE;render();$("#v-search").scrollTop=0};
+$("#trackBtn").onclick=()=>{st.track=!st.track;st.shown=PAGE;render();$("#v-search").scrollTop=0};
+$("#reset").onclick=()=>{Object.assign(st,{q:"",stage:"全部",who:null,meet:null,topic:null,track:false,shown:PAGE});st.exp.clear();st.open.clear();$("#q").value="";render()};
+$("#phits").onclick=openHit;
+function shareText(id){
+  const d=DATA.find(x=>x.id===id);if(!d)return "";const m=MEETBY[d.mkey];
+  return `【${d.pname}】${d.stage}${m&&m.multi?roundTxt(m.round):""}${m&&m.date?"（"+rocLong(m.date)+"）":""}\n${d.committee}・第 ${d.no} 點\n審查意見：${d.comment}\n辦理情形：${d.response||"（未附）"}`;
+}
+async function copyText(t){
+  try{await navigator.clipboard.writeText(t);toast("已複製")}
+  catch(e){const a=document.createElement("textarea");a.value=t;document.body.appendChild(a);a.select();try{document.execCommand("copy");toast("已複製")}catch(_){toast("無法複製")}a.remove()}
+}
 $("#list").onclick=e=>{
+  if(openHit(e))return;
+  const cp=e.target.closest("[data-copy]");if(cp){copyText(shareText(cp.dataset.copy));return}
+  const sh=e.target.closest("[data-share]");if(sh){navigator.share({text:shareText(sh.dataset.share)}).catch(()=>{});return}
   if(e.target.closest("#more")){st.shown+=PAGE;renderList();return}
   if(e.target.closest(".resp"))return;
   const card=e.target.closest(".card");if(!card)return;const id=card.dataset.id;
@@ -750,11 +951,14 @@ $("#people").onclick=e=>{const b=e.target.closest("[data-who]");if(b)openProfile
 $("#pq").addEventListener("input",()=>renderPeople());
 $("#meets").onclick=e=>{
   const toQ=()=>{render();go("search");$("#v-search").scrollTop=0};
+  const pin0=e.target.closest("[data-pin]");if(pin0){togglePin(pin0.dataset.pin);renderProjectList();return}
   const pj=e.target.closest("[data-proj]");if(pj){const p=projBy(pj.dataset.proj);setScope(p.county||"全部縣市",p.file);go("meet");$("#v-meet").scrollTop=0;return}
   const pf=e.target.closest("[data-prof]");if(pf){openProfile(pf.dataset.prof);return}
-  const tp=e.target.closest("[data-topic]");if(tp){Object.assign(st,{stage:"全部",who:null,meet:tp.dataset.meet||null,topic:tp.dataset.topic,q:"",shown:PAGE});$("#q").value="";toQ();return}
-  const b=e.target.closest("[data-meet]");if(b){const m=MEETBY[b.dataset.meet];Object.assign(st,{stage:"全部",meet:m.key,who:null,topic:null,shown:PAGE});toQ();return}
-  if(e.target.closest("[data-allq]")){Object.assign(st,{stage:"全部",meet:null,who:null,topic:null,shown:PAGE});toQ()}
+  const tp=e.target.closest("[data-topic]");if(tp){Object.assign(st,{track:false,stage:"全部",who:null,meet:tp.dataset.meet||null,topic:tp.dataset.topic,q:"",shown:PAGE});$("#q").value="";toQ();return}
+  const b=e.target.closest("[data-meet]");if(b){const m=MEETBY[b.dataset.meet];Object.assign(st,{stage:"全部",meet:m.key,who:null,topic:null,track:false,shown:PAGE});toQ();return}
+  if(e.target.closest("[data-allq]")){Object.assign(st,{stage:"全部",meet:null,who:null,topic:null,track:false,shown:PAGE});toQ();return}
+  if(e.target.closest("[data-track]")){Object.assign(st,{stage:"全部",meet:null,who:null,topic:null,track:true,q:"",shown:PAGE});$("#q").value="";toQ();return}
+  if(e.target.closest("[data-print]")){window.print();return}
 };
 $("#bsheet").onclick=e=>{
   const ov=e.target.closest("[data-ov]");if(ov){const p=projBy(ov.dataset.ov);setScope(p.county||"全部縣市",p.file);hideSheet();go("meet");$("#v-meet").scrollTop=0;return}
@@ -764,7 +968,11 @@ $("#bsheet").onclick=e=>{
 $("#bsClose").onclick=hideSheet;
 $("#nocoord").onclick=showNoCoord;
 $("#btnLocate").onclick=locateMe;
-$("#btnHome").onclick=()=>{hideSheet();$("#countySel").value="";$("#countyTxt").textContent="縣市：全部";map.flyToBounds([[21.85,119.3],[25.35,122.05]],{duration:.6})};
+$("#btnLayer").onclick=e=>{e.stopPropagation();const m=$("#layerMenu");m.hidden=!m.hidden;$("#btnLayer").setAttribute("aria-expanded",!m.hidden);
+  document.querySelectorAll("#layerMenu [data-base]").forEach(b=>b.setAttribute("aria-pressed",b.dataset.base===BASE_KEY))};
+$("#layerMenu").onclick=e=>{const b=e.target.closest("[data-base]");if(!b)return;setBase(b.dataset.base);$("#layerMenu").hidden=true;$("#btnLayer").setAttribute("aria-expanded",false)};
+document.addEventListener("click",e=>{if(!e.target.closest("#layerMenu,#btnLayer")){$("#layerMenu").hidden=true;$("#btnLayer").setAttribute("aria-expanded",false)}});
+$("#btnHome").onclick=()=>{hideSheet();$("#countySel").value="";$("#countyTxt").textContent="縣市：全部";map.flyToBounds(MAIN_VIEW,{duration:.6})};
 document.querySelector(".tabbar").onclick=e=>{const b=e.target.closest("button");if(b)go(b.dataset.v)};
 
 /* =========================================================
@@ -772,6 +980,16 @@ document.querySelector(".tabbar").onclick=e=>{const b=e.target.closest("button")
    ========================================================= */
 const nocache=u=>u+(u.includes("?")?"&":"?")+"t="+Date.now();
 async function getJSON(u){const r=await fetch(nocache(u),{cache:"no-store"});if(!r.ok)throw new Error(u+" "+r.status);return r.json()}
+/* 有版本號的檔案：存在手機快取，內容沒變就不再下載 */
+const CACHE="review-data-v1";
+async function getCached(u){
+  if(!window.caches||!u.includes("?v="))return getJSON(u);
+  try{const c=await caches.open(CACHE);let r=await c.match(u);
+    if(!r){r=await fetch(u,{cache:"no-store"});if(!r.ok)throw new Error(u+" "+r.status);await c.put(u,r.clone())}
+    return await r.json()}
+  catch(e){if(/ \d{3}$/.test(e.message))throw e;return getJSON(u)}
+}
+async function pruneCache(keep){keep.add("index.json?offline");try{if(!window.caches)return;const c=await caches.open(CACHE);for(const r of await c.keys()){const p=new URL(r.url);if(!keep.has(p.pathname.split("/").pop()+p.search))c.delete(r)}}catch(e){}}
 const KEYSTORE="reviewKey";
 const ub64=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
 const tb64=b=>btoa(String.fromCharCode(...new Uint8Array(b)));
@@ -781,7 +999,14 @@ async function deriveKey(pw,salt,iter){
   const base=await crypto.subtle.importKey("raw",new TextEncoder().encode(pw),"PBKDF2",false,["deriveKey"]);
   return crypto.subtle.deriveKey({name:"PBKDF2",hash:"SHA-256",salt:ub64(salt),iterations:iter},base,{name:"AES-GCM",length:256},true,["decrypt"]);
 }
-async function decryptWith(key,o){const pt=await crypto.subtle.decrypt({name:"AES-GCM",iv:ub64(o.iv)},key,ub64(o.ct));return JSON.parse(new TextDecoder().decode(pt))}
+async function decryptWith(key,o){
+  let pt=await crypto.subtle.decrypt({name:"AES-GCM",iv:ub64(o.iv)},key,ub64(o.ct));
+  if(o.z==="gzip"){
+    if(typeof DecompressionStream==="undefined")throw new Error("瀏覽器版本過舊，請更新 iOS／瀏覽器");
+    pt=await new Response(new Blob([pt]).stream().pipeThrough(new DecompressionStream("gzip"))).arrayBuffer();
+  }
+  return JSON.parse(new TextDecoder().decode(pt));
+}
 async function loadStoredKey(salt){try{const s=JSON.parse(localStorage.getItem(KEYSTORE)||"null");if(!s||s.salt!==salt)return null;return await crypto.subtle.importKey("raw",ub64(s.k),{name:"AES-GCM"},true,["decrypt"])}catch(e){return null}}
 async function storeKey(key,salt){try{localStorage.setItem(KEYSTORE,JSON.stringify({salt,k:tb64(await crypto.subtle.exportKey("raw",key))}))}catch(e){}}
 function clearKey(){try{localStorage.removeItem(KEYSTORE)}catch(e){}}
@@ -792,34 +1017,75 @@ function askPassword(encIdx){
       $("#go").disabled=true;$("#go").textContent="解密中…";$("#pwErr").textContent="";
       try{const key=await deriveKey(pw,encIdx.salt,encIdx.iter);const idx=await decryptWith(key,encIdx);
         if($("#remember").checked)await storeKey(key,encIdx.salt);f.hidden=true;resolve({key,idx})}
-      catch(err){$("#pwErr").textContent="密碼錯誤，請再試一次。"}
+      catch(err){$("#pwErr").textContent=/瀏覽器/.test(err.message)?err.message:"密碼錯誤，請再試一次。"}
       finally{$("#go").disabled=false;$("#go").textContent="開啟"}};
   });
 }
-async function getData(u){const o=await getJSON(u);if(!isEnc(o))return o;if(!KEY||o.salt!==KEYSALT)throw new Error("密碼已更換，請登出後重新輸入");return decryptWith(KEY,o)}
+async function getData(u,cached){const o=cached?await getCached(u):await getJSON(u);if(!isEnc(o))return o;if(!KEY||o.salt!==KEYSALT)throw new Error("密碼已更換，請登出後重新輸入");return decryptWith(KEY,o)}
 function showMsg(html){$("#list").innerHTML=`<div class="loadmsg">${html}</div>`;$("#count").textContent=""}
+const verUrl=(f,v)=>"data/"+f.split("/").map(encodeURIComponent).join("/")+(v?"?v="+v:"");
+function hashStr(s){let h=5381;for(let i=0;i<s.length;i++)h=(h*33^s.charCodeAt(i))>>>0;return h.toString(36)}
+let IDXVER="";
 
-async function loadAll(list){
-  showMsg("資料載入中…");
-  const order=new Map(STAGES.map((s,i)=>[s,i]));
-  PROJECTS=[];DATA=[];MEETS=[];MEETBY={};Object.keys(ROLE_OF).forEach(k=>delete ROLE_OF[k]);
-  const files=await Promise.all(list.map(p=>getData("data/"+encodeURIComponent(p.file)).then(d=>({p,d}))));
-  files.forEach(({p,d},pi)=>{
-    const pj=d.project||{};
-    const proj={file:p.file,name:pj.name||p.name,county:pj.county||"",year:pj.year||"",agency:pj.agency||"",officer:pj.officer||"",status:pj.status||"",
-      tags:Array.isArray(pj.tags)?pj.tags:[],summary:pj.summary||"",
-      locs:(Array.isArray(pj.locations)?pj.locations:(typeof pj.lat==="number"?[{name:"",lat:pj.lat,lng:pj.lng}]:[])).filter(l=>typeof l.lat==="number"&&typeof l.lng==="number"),
-      comments:(d.comments||[]).length};
-    PROJECTS.push(proj);
-    const ms=(d.meetings||[]).slice().sort((a,b)=>(order.get(a.stage)??9)-(order.get(b.stage)??9)||(a.round||0)-(b.round||0)||String(a.date).localeCompare(String(b.date)));
-    const per={};ms.forEach(m=>per[m.stage]=(per[m.stage]||0)+1);
-    ms.forEach((m,i)=>{const key=p.file+"|"+m.id;const mm={...m,key,pid:p.file,pname:proj.name,multi:per[m.stage]>1,idx:pi*1000+i};MEETS.push(mm);MEETBY[key]=mm});
-    (d.comments||[]).forEach(c=>{if(c.role&&c.committee)ROLE_OF[c.committee]=c.role});
-    (d.comments||[]).forEach((c,i)=>DATA.push({...c,id:p.file+"|"+(c.id??i),_i:i,pid:p.file,pname:proj.name,mkey:p.file+"|"+c.meeting,
-      note:c.note||"",section:c.section||"",response:c.response||"",comment:c.comment||"",committee:c.committee||"",no:c.no??"",
-      topics:topicsOf((c.comment||"")+" "+(c.section||""))}));
-  });
+/* 下載一案並併入 DATA／MEETS */
+const ORDER=new Map(STAGES.map((s,i)=>[s,i]));
+function addProject(file,d){
+  const pi=PROJECTS.findIndex(p=>p.file===file),proj=PROJECTS[pi];
+  const ms=(d.meetings||[]).slice().sort((a,b)=>(ORDER.get(a.stage)??9)-(ORDER.get(b.stage)??9)||(a.round||0)-(b.round||0)||String(a.date).localeCompare(String(b.date)));
+  const per={};ms.forEach(m=>per[m.stage]=(per[m.stage]||0)+1);
+  ms.forEach((m,i)=>{const key=file+"|"+m.id;const mm={...m,key,pid:file,pname:proj.name,multi:per[m.stage]>1,idx:pi*1000+i};MEETS.push(mm);MEETBY[key]=mm});
+  (d.comments||[]).forEach(c=>{if(c.role&&c.committee)ROLE_OF[c.committee]=c.role});
+  (d.comments||[]).forEach((c,i)=>DATA.push({...c,id:file+"|"+(c.id??i),_i:i,pid:file,pname:proj.name,mkey:file+"|"+c.meeting,
+    note:c.note||"",section:c.section||"",response:c.response||"",comment:c.comment||"",committee:c.committee||"",no:c.no??"",
+    topics:topicsOf((c.comment||"")+" "+(c.section||""))}));
+  LOADED.add(file);
+}
+let PROG={done:0,total:0};
+function loadOne(file){
+  if(LOADED.has(file))return Promise.resolve();
+  if(LOADING.has(file))return LOADING.get(file);
+  const p=projBy(file);PROG.total++;
+  const pr=getData(verUrl(file,p&&p.v),true).then(d=>{if(!LOADED.has(file))addProject(file,d);PROG.done++;const b=$("#pbar");if(b)b.style.width=Math.round(PROG.done/PROG.total*100)+"%"})
+    .finally(()=>LOADING.delete(file));
+  LOADING.set(file,pr);return pr;
+}
+async function ensure(files){
+  const need=[...files].filter(f=>!LOADED.has(f)&&projBy(f));if(!need.length)return false;
+  if(!LOADING.size)PROG={done:0,total:0};
+  /* 一次最多同時下載 4 案 */
+  const q=need.slice();await Promise.all(Array.from({length:Math.min(4,q.length)},async()=>{while(q.length)await loadOne(q.shift())}));
   DATA.sort((a,b)=>((MEETBY[a.mkey]?.idx??1e9)-(MEETBY[b.mkey]?.idx??1e9))||a._i-b._i);
+  return true;
+}
+function loadSearch(){
+  if(SEARCH)return Promise.resolve();
+  if(!SEARCH_P)SEARCH_P=getData(verUrl(IDX.search,IDXVER),true).then(d=>{SEARCH=d;GRAMS=null}).catch(e=>{SEARCH_P=null;throw e});
+  return SEARCH_P;
+}
+
+/* 啟動：只讀索引，畫面立即可用 */
+async function start(idx){
+  IDX=idx;
+  PROJECTS=(idx.projects||[]).map(p=>({file:p.file,name:p.name,v:p.v||"",updated:p.updated||"",county:p.county||"",year:p.year||"",agency:p.agency||"",officer:p.officer||"",status:p.status||"",
+    tags:Array.isArray(p.tags)?p.tags:[],summary:p.summary||"",stages:Array.isArray(p.stages)?p.stages:null,
+    locs:(Array.isArray(p.locations)?p.locations:(typeof p.lat==="number"?[{name:"",lat:p.lat,lng:p.lng}]:[])).filter(l=>typeof l.lat==="number"&&typeof l.lng==="number"),
+    comments:p.comments||0,track:p.track||0}));
+  /* 自上次開啟後新增幾則（存在這支手機） */
+  const seen=lsGet("seen",null),now={};PROJECTS.forEach(p=>now[p.file]=p.comments);
+  NEWC={};if(seen)PROJECTS.forEach(p=>{const d=p.comments-(seen[p.file]??0);if(d>0)NEWC[p.file]=d});
+  lsSet("seen",now);
+  IDXVER=hashStr(PROJECTS.map(p=>p.v).join(","));
+  if(idx.people){
+    PEOPLE_IDX=await getData(verUrl(idx.people,IDXVER),true);
+    Object.entries(PEOPLE_IDX).forEach(([n,o])=>{if(o.r)ROLE_OF[n]=o.r});
+  }else{
+    /* 舊版資料沒有索引：照舊一次全部下載 */
+    LEGACY=true;showMsg(loadingHTML(`資料載入中…<div class="pbar"><i id="pbar"></i></div>`));
+    await ensure(PROJECTS.map(p=>p.file));
+    PROJECTS.forEach(p=>{if(!p.stages)p.stages=null});
+    DATA.forEach(d=>{const o=PEOPLE_IDX[d.committee]||(PEOPLE_IDX[d.committee]={r:ROLE_OF[d.committee]||"",p:{}});const a=o.p[d.pid]||(o.p[d.pid]=[0,0,0]);const i=STAGES.indexOf(d.stage);if(i>=0)a[i]++});
+  }
+  pruneCache(new Set([...PROJECTS.filter(p=>p.v).map(p=>verUrl(p.file,p.v).split("/").pop()),...[idx.search,idx.people].filter(Boolean).map(f=>verUrl(f,IDXVER).split("/").pop())]));
   let saved=null;try{saved=JSON.parse(localStorage.getItem("scope")||"null")}catch(e){}
   if(saved&&(saved.proj?projBy(saved.proj):true)&&(saved.county==="全部縣市"||PROJECTS.some(p=>p.county===saved.county))){st.county=saved.county;st.proj=saved.proj||null}
   else if(PROJECTS.length===1){st.county=PROJECTS[0].county||"全部縣市";st.proj=PROJECTS[0].file}
@@ -829,7 +1095,11 @@ async function loadAll(list){
 async function init(){
   if(location.protocol==="file:"){showMsg("請用「開啟App.bat」或網址開啟本 App。<br>（直接雙擊 index.html 無法讀取資料）");return}
   try{
-    let idx=await getJSON("data/index.json");
+    let idx;
+    try{idx=await getJSON("data/index.json");try{if(window.caches)(await caches.open(CACHE)).put("data/index.json?offline",new Response(JSON.stringify(idx)))}catch(e){}}
+    catch(err){ /* 沒網路：用上次的索引（已下載過的案子仍可查） */
+      let r=null;try{if(window.caches)r=await (await caches.open(CACHE)).match("data/index.json?offline")}catch(e){}
+      if(!r)throw err;idx=await r.json();toast("目前離線，顯示上次下載的資料")}
     if(isEnc(idx)){
       KEYSALT=idx.salt;$("#logout").hidden=false;
       if(!(window.crypto&&crypto.subtle)){showMsg("此瀏覽器無法解密，請用 https 網址開啟。");return}
@@ -838,13 +1108,35 @@ async function init(){
       if(!plain){showMsg("請輸入密碼");const r=await askPassword(idx);KEY=r.key;plain=r.idx}
       idx=plain;
     }
-    const list=idx.projects||[];
-    if(!list.length){showMsg("data 資料夾內還沒有案子。<br>請先用轉檔工具匯出。");return}
-    await loadAll(list);
+    if(!(idx.projects||[]).length){showMsg("data 資料夾內還沒有案子。<br>請先用轉檔工具匯出。");return}
+    await start(idx);
   }catch(e){console.error(e);showMsg("資料讀取失敗，請確認網路連線。<br><small>"+esc(e.message)+"</small>")}
 }
 $("#logout").onclick=()=>{clearKey();location.reload()};
+/* 外觀：自動（跟手機系統）／淺色／深色 */
+const THEMES={auto:"自動（跟隨手機）",light:"淺色",dark:"深色"};
+const darkMQ=window.matchMedia?matchMedia("(prefers-color-scheme: dark)"):null;
+function applyTheme(t){
+  if(t==="light"||t==="dark")document.documentElement.dataset.theme=t;else delete document.documentElement.dataset.theme;
+  const dark=t==="dark"||(t!=="light"&&darkMQ&&darkMQ.matches);
+  document.querySelector('meta[name="theme-color"]').content=dark?"#1E293B":"#FFFFFF";
+  document.documentElement.classList.toggle("is-dark",dark);
+}
+let THEME="auto";try{THEME=localStorage.getItem("theme")||"auto"}catch(e){}
+applyTheme(THEME);
+if(darkMQ&&darkMQ.addEventListener)darkMQ.addEventListener("change",()=>applyTheme(THEME));
+$("#themeBtn").onclick=()=>{
+  $("#sheetTtl").textContent="設定";
+  $("#sheetBody").innerHTML=`<div class="sec-h" style="padding-top:4px">外觀</div><div class="group">${Object.entries(THEMES).map(([k,v])=>`<button class="pr${THEME===k?" sel":""}" data-theme="${k}"><span class="nm">${v}</span>${THEME===k?"✓":""}</button>`).join("")}</div>
+    <div class="sec-h">關於</div><div class="about"><b>審查意見查詢 ${APP_VER}</b><div>${CREDIT}</div><div>${CREDIT_AI}</div>
+    <div class="sm">資料：${PROJECTS.length} 案・${PROJECTS.reduce((a,p)=>a+p.comments,0)} 則意見${IDX&&IDX.projects&&IDX.projects.length?"":""}</div>
+    <div class="sm">加入主畫面：Safari →「分享」→「加入主畫面」，之後像 App 一樣開啟，沒網路也能看已下載過的案子。</div></div>`;
+  $("#sheetBg").hidden=false;
+  $("#sheetBody").onclick=e=>{const b=e.target.closest("[data-theme]");if(!b)return;THEME=b.dataset.theme;try{localStorage.setItem("theme",THEME)}catch(e){}applyTheme(THEME);$("#sheetBg").hidden=true};
+};
 init();
+/* 加入主畫面後可離線開啟（只快取 App 本身；資料另有快取） */
+if("serviceWorker" in navigator&&(location.protocol==="https:"||location.hostname==="localhost"))navigator.serviceWorker.register("sw.js").catch(()=>{});
 </script>
 </body>
 </html>

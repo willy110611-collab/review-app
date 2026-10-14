@@ -1,0 +1,16 @@
+{
+ "name": "審查意見查詢",
+ "short_name": "審查意見",
+ "description": "審查意見查詢｜設計者：陳冠瑋｜由 Claude AI 協助設計",
+ "start_url": "./",
+ "scope": "./",
+ "display": "standalone",
+ "background_color": "#F8FAFC",
+ "theme_color": "#2563EB",
+ "lang": "zh-Hant",
+ "icons": [
+  {"src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png"},
+  {"src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png"},
+  {"src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}
+ ]
+}
